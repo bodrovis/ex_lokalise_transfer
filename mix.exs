@@ -1,0 +1,82 @@
+defmodule ExLokaliseSync.MixProject do
+  use Mix.Project
+
+  @version "0.1.0"
+  @source_url "https://github.com/bodrovis/ex_lokalise_sync"
+
+  def project do
+    [
+      app: :ex_lokalise_sync,
+      version: @version,
+      elixir: "~> 1.19",
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      description: "Lokalise upload/download tool for Elixir",
+      package: package(),
+      docs: docs(),
+      test_coverage: [tool: ExCoveralls],
+
+      # Dialyxir
+      dialyzer: [
+        plt_add_deps: :apps_direct,
+        plt_add_apps: [:mint]
+      ]
+    ]
+  end
+
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      extra_applications: [:logger]
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    [
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
+      {:elixir_lokalise_api, "~> 4.0"},
+      {:excoveralls, "~> 0.18.1", only: :test},
+      {:mox, "~> 1.2", only: :test}
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
+    ]
+  end
+
+  def docs do
+    [
+      extras: [
+        "README.md": [title: "Readme"],
+        "CHANGELOG.md": [title: "Changelog"],
+        "LICENSE.md": [title: "License"]
+      ],
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      homepage_url: @source_url,
+      formatters: ["html"]
+    ]
+  end
+
+  defp package do
+    [
+      description:
+        "Simple and production-ready sync layer for Lokalise (upload/download) on top of elixir_lokalise_api.",
+      maintainers: ["Elijah S. Krukowski"],
+      licenses: ["BSD-3-Clause"],
+      links: %{
+        "GitHub" => @source_url
+      }
+    ]
+  end
+end
