@@ -1,12 +1,12 @@
-defmodule ExLokaliseSync.MixProject do
+defmodule ExLokaliseTransfer.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/bodrovis/ex_lokalise_sync"
+  @source_url "https://github.com/bodrovis/ex_lokalise_transfer"
 
   def project do
     [
-      app: :ex_lokalise_sync,
+      app: :ex_lokalise_transfer,
       version: @version,
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
@@ -34,10 +34,12 @@ defmodule ExLokaliseSync.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:elixir_lokalise_api, "~> 4.1.1"},
+      {:finch, "~> 0.20"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
-      {:elixir_lokalise_api, "~> 4.0"},
       {:excoveralls, "~> 0.18.1", only: :test},
+      {:ex_doc, "~> 0.37", only: [:dev, :test]},
       {:mox, "~> 1.2", only: :test}
     ]
   end

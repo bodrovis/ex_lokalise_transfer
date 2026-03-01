@@ -1,8 +1,10 @@
 ExUnit.start()
 
-Mox.defmock(ExLokaliseSync.TokenProviderMock, for: ExLokaliseSync.TokenProvider)
+Mox.defmock(ExLokaliseTransfer.HTTPClientMock,
+  for: ElixirLokaliseApi.HTTPClient
+)
 
-defmodule ExLokaliseSync.Case do
+defmodule ExLokaliseTransfer.Case do
   @moduledoc false
   use ExUnit.CaseTemplate
 
@@ -11,7 +13,6 @@ defmodule ExLokaliseSync.Case do
       use ExUnit.Case, unquote(opts)
 
       import Mox
-      alias ExLokaliseSync.TokenProviderMock
 
       setup :set_mox_from_context
       setup :verify_on_exit!
