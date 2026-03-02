@@ -7,7 +7,7 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
 
   alias ExLokaliseTransfer.Config
   alias ElixirLokaliseApi.Files
-  alias ElixirLokaliseApi.Config, as: SDKConfig
+  # alias ElixirLokaliseApi.Config, as: SDKConfig
 
   @spec run(Config.t()) :: :ok | {:error, term()}
   def run(%Config{project_id: project_id, body: body}) do
