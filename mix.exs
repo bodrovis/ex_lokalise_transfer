@@ -36,6 +36,7 @@ defmodule ExLokaliseTransfer.MixProject do
     [
       {:elixir_lokalise_api, "~> 4.1.1"},
       {:finch, "~> 0.20"},
+      {:jason, "~> 1.2"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18.1", only: :test},

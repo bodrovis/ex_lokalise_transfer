@@ -6,7 +6,10 @@ defmodule ExLokaliseTransfer.Uploader.Common do
     [
       body: [],
       retry: [
-        max_attempts: 3
+        max_attempts: 3,
+        min_sleep_ms: 1_000,
+        max_sleep_ms: 60_000,
+        jitter: :centered
       ]
     ]
   end
@@ -19,7 +22,7 @@ defmodule ExLokaliseTransfer.Uploader.Common do
     end
   end
 
-  defp validate_body(body) when is_list(body) do
+  defp validate_body(_) do
     :ok
   end
 end

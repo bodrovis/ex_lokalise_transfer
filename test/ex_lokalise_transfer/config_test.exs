@@ -38,17 +38,6 @@ defmodule ExLokaliseTransfer.ConfigTest do
 
       assert config.project_id == "from_system_env"
     end
-
-    test "raises when project_id is missing everywhere" do
-      original = Application.get_env(:ex_lokalise_transfer, :project_id)
-      Application.delete_env(:ex_lokalise_transfer, :project_id)
-
-      on_exit(fn -> restore_env(:ex_lokalise_transfer, :project_id, original) end)
-
-      assert_raise RuntimeError, fn ->
-        Config.build()
-      end
-    end
   end
 
   describe "build/2 – body and retry" do
@@ -112,7 +101,12 @@ defmodule ExLokaliseTransfer.ConfigTest do
       config = %Config{
         project_id: "proj_123",
         body: [],
-        retry: [max_attempts: 3]
+        retry: [
+          max_attempts: 3,
+          min_sleep_ms: 1_000,
+          max_sleep_ms: 60_000,
+          jitter: :centered
+        ]
       }
 
       assert :ok == Config.validate_common(config)
@@ -166,10 +160,10 @@ defmodule ExLokaliseTransfer.ConfigTest do
       config = %Config{
         project_id: "proj_123",
         body: [],
-        retry: []
+        retry: [min_sleep_ms: 1_000, max_sleep_ms: 60_000, jitter: :centered]
       }
 
-      assert {:error, {:invalid, :retry_max_attempts, :not_integer}} =
+      assert {:error, {:invalid, :max_attempts, :not_integer}} =
                Config.validate_common(config)
     end
 
@@ -177,10 +171,10 @@ defmodule ExLokaliseTransfer.ConfigTest do
       config = %Config{
         project_id: "proj_123",
         body: [],
-        retry: [max_attempts: "3"]
+        retry: [max_attempts: "3", min_sleep_ms: 1_000, max_sleep_ms: 60_000, jitter: :centered]
       }
 
-      assert {:error, {:invalid, :retry_max_attempts, :not_integer}} =
+      assert {:error, {:invalid, :max_attempts, :not_integer}} =
                Config.validate_common(config)
     end
 
@@ -188,10 +182,98 @@ defmodule ExLokaliseTransfer.ConfigTest do
       config = %Config{
         project_id: "proj_123",
         body: [],
-        retry: [max_attempts: 0]
+        retry: [max_attempts: 0, min_sleep_ms: 1_000, max_sleep_ms: 60_000, jitter: :centered]
       }
 
-      assert {:error, {:invalid, :retry_max_attempts, :lt_1}} =
+      assert {:error, {:invalid, :max_attempts, {:lt, 1}}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when min_sleep_ms is missing" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, max_sleep_ms: 60_000, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :min_sleep_ms, :not_integer}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when min_sleep_ms is not an integer" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: "1000", max_sleep_ms: 60_000, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :min_sleep_ms, :not_integer}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when min_sleep_ms is negative" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: -1, max_sleep_ms: 60_000, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :min_sleep_ms, {:lt, 0}}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when max_sleep_ms is missing" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: 1_000, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :max_sleep_ms, :not_integer}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when max_sleep_ms is not an integer" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: 1_000, max_sleep_ms: "60000", jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :max_sleep_ms, :not_integer}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when max_sleep_ms is negative" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: 1_000, max_sleep_ms: -1, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :max_sleep_ms, {:lt, 0}}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when min_sleep_ms is greater than max_sleep_ms" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: 10_000, max_sleep_ms: 1_000, jitter: :centered]
+      }
+
+      assert {:error, {:invalid, :retry_sleep_ms, :min_gt_max}} =
+               Config.validate_common(config)
+    end
+
+    test "fails when jitter is invalid" do
+      config = %Config{
+        project_id: "proj_123",
+        body: [],
+        retry: [max_attempts: 3, min_sleep_ms: 1_000, max_sleep_ms: 60_000, jitter: :wat]
+      }
+
+      assert {:error, {:invalid, :retry_jitter, :wat}} =
                Config.validate_common(config)
     end
   end

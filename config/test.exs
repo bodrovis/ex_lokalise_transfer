@@ -11,4 +11,4 @@ config :elixir_lokalise_api,
 config :ex_lokalise_transfer,
   project_id: "test-project-id"
 
-config :logger, level: :warning
+config :logger, level: :error
