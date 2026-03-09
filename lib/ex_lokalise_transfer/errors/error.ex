@@ -27,6 +27,12 @@ defmodule ExLokaliseTransfer.Errors.Error do
           details: map()
         }
 
+  @doc """
+  Converts `{:error, ...}` values into a normalized `%Error{}`.
+
+  HTTP responses are parsed by source; non-HTTP errors are classified as transport,
+  message, or unexpected.
+  """
   @spec normalize({:error, any()}, source()) :: {:error, t()}
   def normalize({:error, {data, status}}, source)
       when is_integer(status) and status >= 100 and status <= 599 do

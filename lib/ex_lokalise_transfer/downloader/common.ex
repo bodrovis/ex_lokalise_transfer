@@ -1,11 +1,29 @@
 defmodule ExLokaliseTransfer.Downloader.Common do
+  @moduledoc """
+  Common defaults and validation for downloader flows.
+
+  Provides default option values for bundle download requests, retry settings,
+  and local extraction options.
+  """
+
   alias ExLokaliseTransfer.Config
 
+  @doc """
+  Returns the default downloader options.
+
+  Includes:
+    - Lokalise bundle request options in `:body`
+    - retry/backoff settings in `:retry`
+    - local extraction settings in `:extra`
+  """
   @spec default_opts() :: Keyword.t()
   def default_opts do
     [
       body: [
-        format: "json"
+        format: "json",
+        original_filenames: true,
+        directory_prefix: "",
+        indentation: "2sp"
       ],
       retry: [
         max_attempts: 3,
@@ -19,6 +37,12 @@ defmodule ExLokaliseTransfer.Downloader.Common do
     ]
   end
 
+  @doc """
+  Validates downloader configuration.
+
+  Runs shared config validation and downloader-specific checks for required
+  download body options and extraction settings.
+  """
   @spec validate(Config.t()) :: :ok | {:error, term()}
   def validate(%Config{} = config) do
     with :ok <- Config.validate_common(config),

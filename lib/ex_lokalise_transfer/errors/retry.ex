@@ -1,12 +1,9 @@
 defmodule ExLokaliseTransfer.Retry do
   @moduledoc """
-  Runs an operation with retries.
+  Retries operations that return `{:ok, term}` or `{:error, term}`.
 
-  Expects operation to return {:ok, term} | {:error, term}.
-  On error:
-    - normalizes via ExLokaliseTransfer.Errors.Error.normalize/2
-    - checks retryability via ExLokaliseTransfer.Errors.Retryable.retryable?/1
-    - retries up to `max_attempts` total attempts
+  Errors are normalized into `%Error{}`, checked for retryability, and retried
+  with exponential backoff and jitter up to the configured attempt limit.
   """
 
   require Logger
@@ -23,6 +20,11 @@ defmodule ExLokaliseTransfer.Retry do
           jitter: jitter_mode()
         ]
 
+  @doc """
+  Runs a zero-arity operation with retries.
+
+  The operation is retried only when the normalized error is classified as retryable.
+  """
   @spec run((-> {:ok, term()} | {:error, term()}), Error.source(), retry_opts()) ::
           {:ok, term()} | {:error, Error.t()}
   def run(fun, source, opts) when is_function(fun, 0) and is_list(opts) do

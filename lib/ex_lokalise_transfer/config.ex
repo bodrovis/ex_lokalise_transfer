@@ -1,12 +1,12 @@
 defmodule ExLokaliseTransfer.Config do
   @moduledoc """
-  Configuration loader for ExLokaliseTransfer.
+  Builds and validates runtime configuration for ExLokaliseTransfer.
 
-  Handles:
+  The config includes:
     - `project_id`
-    - `body` (request payload/options for Lokalise)
-    - `retry` (retry/backoff configuration)
-    - `extra` (feature-specific extra options)
+    - `body` request options
+    - `retry` backoff options
+    - `extra` feature-specific options
   """
 
   @type t :: %__MODULE__{
@@ -20,6 +20,11 @@ defmodule ExLokaliseTransfer.Config do
 
   @app :ex_lokalise_transfer
 
+  @doc """
+  Builds a `%Config{}` from explicit options and merged defaults.
+
+  `project_id` is taken from `opts`, then application config, and raises if missing.
+  """
   @spec build(Keyword.t(), Keyword.t()) :: t()
   def build(opts \\ [], default_opts \\ []) do
     project_id =
@@ -42,6 +47,12 @@ defmodule ExLokaliseTransfer.Config do
     }
   end
 
+  @doc """
+  Validates config fields shared across downloader and uploader flows.
+
+  This includes `project_id`, keyword-list shape checks for `body` and `extra`,
+  and retry option validation.
+  """
   @spec validate_common(t()) :: :ok | {:error, term()}
   def validate_common(%__MODULE__{} = config) do
     with :ok <- validate_non_empty(config.project_id, :project_id),

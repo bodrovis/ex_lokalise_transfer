@@ -1,6 +1,12 @@
 defmodule ExLokaliseTransfer.Downloader.Sync do
   @moduledoc """
-  Sync downloader module for ExLokaliseTransfer.
+  Runs the sync download flow for Lokalise translations.
+
+  The module requests a bundle URL from Lokalise, downloads the ZIP archive with retries,
+  and extracts it into `extra[:locales_path]`.
+
+  The target path is expanded to an absolute path. Existing files in the target directory
+  are not removed before extraction.
   """
 
   require Logger
@@ -13,6 +19,11 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
 
   @finch ElixirLokaliseApi.Finch
 
+  @doc """
+  Downloads and extracts the Lokalise bundle into the configured locales path.
+
+  Returns `:ok` on success or `{:error, reason}` on failure.
+  """
   @spec run(Config.t()) :: :ok | {:error, term()}
   def run(%Config{
         project_id: project_id,

@@ -1,6 +1,9 @@
 defmodule ExLokaliseTransfer.Errors.Retryable do
   @moduledoc """
-  Retry policy for normalized errors (`ExLokaliseTransfer.Errors.Error`).
+  Classifies normalized errors as retryable or non-retryable.
+
+  The policy is based on HTTP status codes, transport failure reasons,
+  and the normalized error kind.
   """
 
   alias ExLokaliseTransfer.Errors.Error
@@ -15,6 +18,9 @@ defmodule ExLokaliseTransfer.Errors.Retryable do
                                      :nxdomain
                                    ])
 
+  @doc """
+  Returns whether the given normalized error should be retried.
+  """
   @spec retryable?(Error.t()) :: boolean()
   def retryable?(%Error{kind: :http, status: status}) when status in 100..599 do
     cond do
@@ -48,6 +54,9 @@ defmodule ExLokaliseTransfer.Errors.Retryable do
           | :unexpected
           | :unknown
 
+  @doc """
+  Returns a coarse retry-related classification for a normalized error.
+  """
   @spec classify(Error.t()) :: classification()
   def classify(%Error{kind: :http, status: 429}), do: :rate_limited
   def classify(%Error{kind: :http, status: 408}), do: :timeout
