@@ -100,8 +100,8 @@ defmodule ExLokaliseTransfer.Downloader.Bundle do
     Path.join(System.tmp_dir!(), filename)
   end
 
-  defp prepare_tmp_file(path, tmp_path) do
-    with :ok <- File.mkdir_p(Path.dirname(path)),
+  defp prepare_tmp_file(final_path, tmp_path) do
+    with :ok <- File.mkdir_p(Path.dirname(final_path)),
          :ok <- cleanup_tmp(tmp_path) do
       :ok
     end

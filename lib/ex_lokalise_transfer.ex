@@ -28,7 +28,7 @@ defmodule ExLokaliseTransfer do
   Runs the default download flow.
   """
   @spec download(Keyword.t()) :: result()
-  @spec download() :: :ok | {:error, any()}
+  @spec download() :: result()
   def download(opts \\ []), do: download_sync(opts)
 
   @doc """

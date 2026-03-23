@@ -9,14 +9,15 @@ defmodule ExLokaliseTransfer.Retry do
   require Logger
 
   alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.Backoff
   alias ExLokaliseTransfer.Errors.Retryable
 
   @type jitter_mode :: :full | :centered
 
   @type retry_opts :: [
           max_attempts: pos_integer(),
-          min_sleep_ms: pos_integer(),
-          max_sleep_ms: pos_integer(),
+          min_sleep_ms: non_neg_integer(),
+          max_sleep_ms: non_neg_integer(),
           jitter: jitter_mode()
         ]
 
@@ -64,7 +65,7 @@ defmodule ExLokaliseTransfer.Retry do
 
   # attempt_idx=1 -> first attempt failed -> first retry sleep
   defp retry_sleep_ms(attempt_idx, opts) do
-    backoff_ms(attempt_idx, opts)
+    Backoff.backoff_ms(attempt_idx, opts)
   end
 
   defp log_retry(%Error{} = e, attempt_idx, max_attempts, sleep_ms) do
@@ -90,38 +91,4 @@ defmodule ExLokaliseTransfer.Retry do
       retryable: Retryable.retryable?(e)
     )
   end
-
-  # failed_attempt_n: 1,2,3... (not attempt_idx)
-  defp backoff_ms(failed_attempt_n, opts)
-       when is_integer(failed_attempt_n) and failed_attempt_n >= 1 do
-    min = Keyword.fetch!(opts, :min_sleep_ms)
-    max = Keyword.fetch!(opts, :max_sleep_ms)
-    jitter = Keyword.get(opts, :jitter, :centered)
-
-    # failed_attempt_n=1 -> min*2^0 = min
-    # failed_attempt_n=2 -> min*2^1 = 2*min
-    exp = min * Integer.pow(2, failed_attempt_n - 1)
-    base = clamp(exp, min, max)
-
-    base
-    |> apply_jitter(jitter)
-    |> clamp(0, max)
-  end
-
-  defp apply_jitter(base, :full) do
-    # 0..base
-    :rand.uniform(base + 1) - 1
-  end
-
-  defp apply_jitter(base, :centered) do
-    # base*(0.5..1.5) using ints:
-    half = div(base, 2)
-    half + (:rand.uniform(base + 1) - 1)
-  end
-
-  defp apply_jitter(base, _), do: base
-
-  defp clamp(x, min, _max) when x < min, do: min
-  defp clamp(x, _min, max) when x > max, do: max
-  defp clamp(x, _min, _max), do: x
 end

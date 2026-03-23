@@ -6,6 +6,7 @@ defmodule ExLokaliseTransfer.Config do
     - `project_id`
     - `body` request options
     - `retry` backoff options
+    - `poll` polling/backoff options
     - `extra` feature-specific options
   """
 
@@ -13,10 +14,11 @@ defmodule ExLokaliseTransfer.Config do
           project_id: String.t(),
           body: Keyword.t(),
           retry: Keyword.t(),
+          poll: Keyword.t() | nil,
           extra: Keyword.t()
         }
 
-  defstruct [:project_id, body: [], retry: [], extra: []]
+  defstruct [:project_id, body: [], retry: [], poll: nil, extra: []]
 
   @app :ex_lokalise_transfer
 
@@ -35,14 +37,16 @@ defmodule ExLokaliseTransfer.Config do
         Set it via config(:ex_lokalise_transfer, project_id: ...) or pass project_id: in opts.
         """
 
-    body = do_opts_override(:body, default_opts, opts)
-    retry = do_opts_override(:retry, default_opts, opts)
-    extra = do_opts_override(:extra, default_opts, opts)
+    body = merge_opts(:body, default_opts, opts)
+    retry = merge_opts(:retry, default_opts, opts)
+    poll = merge_optional_opts(:poll, default_opts, opts)
+    extra = merge_opts(:extra, default_opts, opts)
 
     %__MODULE__{
       project_id: project_id,
       body: body,
       retry: retry,
+      poll: poll,
       extra: extra
     }
   end
@@ -50,14 +54,18 @@ defmodule ExLokaliseTransfer.Config do
   @doc """
   Validates config fields shared across downloader and uploader flows.
 
-  This includes `project_id`, keyword-list shape checks for `body` and `extra`,
-  and retry option validation.
+  This includes:
+    - `project_id`
+    - keyword-list shape checks for `body` and `extra`
+    - retry backoff validation
+    - optional poll backoff validation
   """
   @spec validate_common(t()) :: :ok | {:error, term()}
   def validate_common(%__MODULE__{} = config) do
     with :ok <- validate_non_empty(config.project_id, :project_id),
          :ok <- validate_keyword_or_empty(config.body, :body),
-         :ok <- validate_retry(config.retry),
+         :ok <- validate_backoff_opts(config.retry, :retry),
+         :ok <- validate_optional_backoff_opts(config.poll, :poll),
          :ok <- validate_keyword_or_empty(config.extra, :extra) do
       :ok
     end
@@ -90,21 +98,26 @@ defmodule ExLokaliseTransfer.Config do
     {:error, {:invalid, field, :not_keyword}}
   end
 
-  defp validate_retry(retry) when is_list(retry) do
-    if Keyword.keyword?(retry) do
-      with :ok <- validate_int_min(retry, :max_attempts, 1),
-           :ok <- validate_int_min(retry, :min_sleep_ms, 0),
-           :ok <- validate_int_min(retry, :max_sleep_ms, 0),
-           :ok <- validate_min_le_max(retry, :min_sleep_ms, :max_sleep_ms),
-           :ok <- validate_jitter(retry) do
+  defp validate_optional_backoff_opts(nil, _field), do: :ok
+  defp validate_optional_backoff_opts(opts, field), do: validate_backoff_opts(opts, field)
+
+  defp validate_backoff_opts(opts, field) when is_list(opts) do
+    if Keyword.keyword?(opts) do
+      with :ok <- validate_int_min(opts, :max_attempts, 1),
+           :ok <- validate_int_min(opts, :min_sleep_ms, 0),
+           :ok <- validate_int_min(opts, :max_sleep_ms, 0),
+           :ok <- validate_min_le_max(opts, field),
+           :ok <- validate_jitter(opts, field) do
         :ok
       end
     else
-      {:error, {:invalid, :retry, :not_keyword}}
+      {:error, {:invalid, field, :not_keyword}}
     end
   end
 
-  defp validate_retry(_), do: {:error, {:invalid, :retry, :not_keyword}}
+  defp validate_backoff_opts(_opts, field) do
+    {:error, {:invalid, field, :not_keyword}}
+  end
 
   defp validate_int_min(opts, key, min) do
     val = Keyword.get(opts, key)
@@ -121,36 +134,48 @@ defmodule ExLokaliseTransfer.Config do
     end
   end
 
-  defp validate_min_le_max(opts, min_key, max_key) do
-    min = Keyword.get(opts, min_key)
-    max = Keyword.get(opts, max_key)
+  defp validate_min_le_max(opts, field) do
+    min = Keyword.get(opts, :min_sleep_ms)
+    max = Keyword.get(opts, :max_sleep_ms)
 
     cond do
       not is_integer(min) or not is_integer(max) ->
-        {:error, {:invalid, :retry_sleep_ms, :not_integer}}
+        {:error, {:invalid, field, :sleep_ms_not_integer}}
 
       min > max ->
-        {:error, {:invalid, :retry_sleep_ms, :min_gt_max}}
+        {:error, {:invalid, field, :min_sleep_gt_max_sleep}}
 
       true ->
         :ok
     end
   end
 
-  defp validate_jitter(opts) do
+  defp validate_jitter(opts, field) do
     case Keyword.get(opts, :jitter) do
       :full -> :ok
       :centered -> :ok
-      other -> {:error, {:invalid, :retry_jitter, other}}
+      other -> {:error, {:invalid, field, {:invalid_jitter, other}}}
     end
   end
 
-  defp do_opts_override(key, default_opts, opts) do
+  defp merge_opts(key, default_opts, opts) do
     defaults = Keyword.get(default_opts, key, [])
     overrides = Keyword.get(opts, key, [])
 
-    defaults
-    |> Keyword.merge(overrides, fn _k, _d, o -> o end)
+    Keyword.merge(defaults, overrides)
+  end
+
+  defp merge_optional_opts(key, default_opts, opts) do
+    defaults = Keyword.get(default_opts, key)
+    overrides = Keyword.get(opts, key)
+
+    cond do
+      is_nil(defaults) and is_nil(overrides) ->
+        nil
+
+      true ->
+        Keyword.merge(defaults || [], overrides || [])
+    end
   end
 
   defp get_from_app_env(key) do

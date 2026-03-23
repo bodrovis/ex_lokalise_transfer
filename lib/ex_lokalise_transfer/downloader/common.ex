@@ -7,6 +7,8 @@ defmodule ExLokaliseTransfer.Downloader.Common do
   """
 
   alias ExLokaliseTransfer.Config
+  alias ExLokaliseTransfer.Retry
+  alias ExLokaliseTransfer.Downloader.Bundle
 
   @doc """
   Returns the default downloader options.
@@ -31,11 +33,19 @@ defmodule ExLokaliseTransfer.Downloader.Common do
         max_sleep_ms: 60_000,
         jitter: :centered
       ],
+      poll: [
+        max_attempts: 3,
+        min_sleep_ms: 1_000,
+        max_sleep_ms: 60_000,
+        jitter: :centered
+      ],
       extra: [
-        locales_path: "./locales"
+        extract_to: "./"
       ]
     ]
   end
+
+  @finch ElixirLokaliseApi.Finch
 
   @doc """
   Validates downloader configuration.
@@ -48,6 +58,14 @@ defmodule ExLokaliseTransfer.Downloader.Common do
     with :ok <- Config.validate_common(config),
          :ok <- validate_body(config.body),
          :ok <- validate_extra(config.extra) do
+      :ok
+    end
+  end
+
+  def download_and_extract(url, zip_path, target_dir, retry) do
+    with {:ok, :downloaded} <-
+           Retry.run(fn -> Bundle.download_zip_stream(@finch, url, zip_path) end, :s3, retry),
+         :ok <- Bundle.extract_zip(zip_path, target_dir) do
       :ok
     end
   end
@@ -71,18 +89,18 @@ defmodule ExLokaliseTransfer.Downloader.Common do
 
   @spec validate_extra(Keyword.t()) :: :ok | {:error, term()}
   defp validate_extra(extra) do
-    case Keyword.fetch(extra, :locales_path) do
+    case Keyword.fetch(extra, :extract_to) do
       :error ->
-        {:error, {:missing, :locales_path}}
+        {:error, {:missing, :extract_to}}
 
       {:ok, path} when is_binary(path) ->
         case String.trim(path) do
-          "" -> {:error, {:invalid, :locales_path, :empty_or_whitespace}}
+          "" -> {:error, {:invalid, :extract_to, :empty_or_whitespace}}
           _ -> :ok
         end
 
       {:ok, _other} ->
-        {:error, {:invalid, :locales_path, :not_binary}}
+        {:error, {:invalid, :extract_to, :not_binary}}
     end
   end
 end

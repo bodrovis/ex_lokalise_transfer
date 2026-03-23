@@ -3,7 +3,7 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
   Runs the sync download flow for Lokalise translations.
 
   The module requests a bundle URL from Lokalise, downloads the ZIP archive with retries,
-  and extracts it into `extra[:locales_path]`.
+  and extracts it into `extra[:extract_to]`.
 
   The target path is expanded to an absolute path. Existing files in the target directory
   are not removed before extraction.
@@ -13,11 +13,11 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
 
   alias ElixirLokaliseApi.Files
   alias ExLokaliseTransfer.Config
+  alias ExLokaliseTransfer.Helpers
   alias ExLokaliseTransfer.Downloader.Bundle
+  alias ExLokaliseTransfer.Downloader.Common
   alias ExLokaliseTransfer.Errors.Error
   alias ExLokaliseTransfer.Retry
-
-  @finch ElixirLokaliseApi.Finch
 
   @doc """
   Downloads and extracts the Lokalise bundle into the configured locales path.
@@ -31,35 +31,25 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
         retry: retry,
         extra: extra
       }) do
-    target_dir = resolve_locales_path(extra)
+    target_dir = Helpers.resolve_extract_to(extra)
 
     Logger.debug("starting sync download",
       project_id: project_id,
       operation: :download_sync,
-      locales_path: target_dir
+      extract_to: target_dir
     )
 
     zip_path = Bundle.temp_zip_path(:sync)
-    data = normalize_body(body)
+    data = Helpers.normalize_body(body)
 
     try do
       with {:ok, bundle_url} <- request_bundle_url(project_id, data, retry),
-           :ok <- download_and_extract(bundle_url, zip_path, target_dir, retry) do
+           :ok <- Common.download_and_extract(bundle_url, zip_path, target_dir, retry) do
         :ok
       end
     after
       File.rm(zip_path)
     end
-  end
-
-  defp normalize_body(nil), do: %{}
-  defp normalize_body(body) when is_map(body), do: body
-  defp normalize_body(body) when is_list(body), do: Map.new(body)
-
-  defp resolve_locales_path(extra) do
-    extra
-    |> Keyword.fetch!(:locales_path)
-    |> Path.expand()
   end
 
   defp request_bundle_url(project_id, data, retry) do
@@ -72,14 +62,6 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
 
       {:error, %Error{} = err} ->
         {:error, err}
-    end
-  end
-
-  defp download_and_extract(url, zip_path, target_dir, retry) do
-    with {:ok, :downloaded} <-
-           Retry.run(fn -> Bundle.download_zip_stream(@finch, url, zip_path) end, :s3, retry),
-         :ok <- Bundle.extract_zip(zip_path, target_dir) do
-      :ok
     end
   end
 end

@@ -262,7 +262,7 @@ defmodule ExLokaliseTransfer.ConfigTest do
         retry: [max_attempts: 3, min_sleep_ms: 10_000, max_sleep_ms: 1_000, jitter: :centered]
       }
 
-      assert {:error, {:invalid, :retry_sleep_ms, :min_gt_max}} =
+      assert {:error, {:invalid, :retry, :min_sleep_gt_max_sleep}} =
                Config.validate_common(config)
     end
 
@@ -273,7 +273,7 @@ defmodule ExLokaliseTransfer.ConfigTest do
         retry: [max_attempts: 3, min_sleep_ms: 1_000, max_sleep_ms: 60_000, jitter: :wat]
       }
 
-      assert {:error, {:invalid, :retry_jitter, :wat}} =
+      assert {:error, {:invalid, :retry, {:invalid_jitter, :wat}}} =
                Config.validate_common(config)
     end
   end
