@@ -10,9 +10,9 @@ defmodule ExLokaliseTransfer.Downloader.Async do
   require Logger
 
   alias ElixirLokaliseApi.Files
-  alias ExLokaliseTransfer.Helpers
+  alias ExLokaliseTransfer.Helpers.Normalization
   alias ExLokaliseTransfer.Config
-  alias ExLokaliseTransfer.Downloader.Bundle
+  alias ExLokaliseTransfer.Downloader.Bundle.Temp
   alias ExLokaliseTransfer.Downloader.Common
   alias ExLokaliseTransfer.Errors.Error
   alias ExLokaliseTransfer.Processes.Poller
@@ -32,7 +32,7 @@ defmodule ExLokaliseTransfer.Downloader.Async do
         poll: poll,
         extra: extra
       }) do
-    target_dir = Helpers.resolve_extract_to(extra)
+    target_dir = Common.resolve_extract_to(extra)
 
     Logger.debug("starting async download",
       project_id: project_id,
@@ -40,8 +40,8 @@ defmodule ExLokaliseTransfer.Downloader.Async do
       extract_to: target_dir
     )
 
-    zip_path = Bundle.temp_zip_path(:async)
-    data = Helpers.normalize_body(body)
+    zip_path = Temp.temp_zip_path(:async)
+    data = Normalization.normalize_body(body)
 
     try do
       with {:ok, process_id} <- request_async_process(project_id, data, retry),

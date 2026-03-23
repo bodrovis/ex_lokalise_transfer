@@ -16,11 +16,11 @@ defmodule ExLokaliseTransfer.Uploader.Async do
 
   require Logger
 
-  alias ExLokaliseTransfer.Helpers
+  alias ExLokaliseTransfer.Helpers.Normalization
   alias ElixirLokaliseApi.Files
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Errors.Error
-  alias ExLokaliseTransfer.Processes.Poller
+  alias ExLokaliseTransfer.Processes.BatchPoller
   alias ExLokaliseTransfer.Retry
   alias ExLokaliseTransfer.Uploader.Files, as: UploadFiles
   alias ExLokaliseTransfer.Uploader.Files.Entry
@@ -40,7 +40,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
   @type process_result :: %{
           entry: Entry.t(),
           process_id: String.t(),
-          result: Poller.result()
+          result: BatchPoller.result()
         }
 
   @type summary :: %{
@@ -70,7 +70,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     )
 
     with {:ok, entries} <- UploadFiles.discover(extra) do
-      body_map = Helpers.normalize_body(body)
+      body_map = Normalization.normalize_body(body)
 
       {enqueue_successes, enqueue_errors} =
         enqueue_many(project_id, entries, body_map, retry)
@@ -169,7 +169,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
       end)
 
     project_id
-    |> Poller.wait_many(process_ids, poll_opts)
+    |> BatchPoller.wait_many(process_ids, poll_opts)
     |> Enum.map(fn {process_id, result} ->
       %{
         entry: Map.fetch!(entry_by_process_id, process_id),

@@ -8,7 +8,8 @@ defmodule ExLokaliseTransfer.Downloader.Common do
 
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Retry
-  alias ExLokaliseTransfer.Downloader.Bundle
+  alias ExLokaliseTransfer.Downloader.Bundle.Fetcher
+  alias ExLokaliseTransfer.Downloader.Bundle.Extractor
 
   @doc """
   Returns the default downloader options.
@@ -64,10 +65,14 @@ defmodule ExLokaliseTransfer.Downloader.Common do
 
   def download_and_extract(url, zip_path, target_dir, retry) do
     with {:ok, :downloaded} <-
-           Retry.run(fn -> Bundle.download_zip_stream(@finch, url, zip_path) end, :s3, retry),
-         :ok <- Bundle.extract_zip(zip_path, target_dir) do
-      :ok
-    end
+           Retry.run(fn -> Fetcher.download_zip_stream(@finch, url, zip_path) end, :s3, retry),
+         do: Extractor.extract_zip(zip_path, target_dir)
+  end
+
+  def resolve_extract_to(extra) do
+    extra
+    |> Keyword.fetch!(:extract_to)
+    |> Path.expand()
   end
 
   @spec validate_body(Keyword.t()) :: :ok | {:error, term()}

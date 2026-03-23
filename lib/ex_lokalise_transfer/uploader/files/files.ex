@@ -38,12 +38,8 @@ defmodule ExLokaliseTransfer.Uploader.Files do
     lang_resolver = Keyword.get(extra, :lang_resolver, :basename)
 
     with :ok <- ensure_dir_exists(locales_path),
-         :ok <- validate_patterns(include_patterns, :include_patterns),
-         :ok <- validate_patterns(exclude_patterns, :exclude_patterns),
-         :ok <- validate_lang_resolver(lang_resolver),
-         {:ok, entries} <- build_entries(locales_path, include_patterns, exclude_patterns),
-         {:ok, entries} <- resolve_langs(entries, lang_resolver) do
-      {:ok, entries}
+         {:ok, entries} <- build_entries(locales_path, include_patterns, exclude_patterns) do
+      resolve_langs(entries, lang_resolver)
     end
   end
 
@@ -97,29 +93,6 @@ defmodule ExLokaliseTransfer.Uploader.Files do
     end
   end
 
-  defp validate_patterns(patterns, field) when is_list(patterns) do
-    if Enum.all?(patterns, &(is_binary(&1) and String.trim(&1) != "")) do
-      :ok
-    else
-      {:error, {:invalid, field, :must_be_non_empty_string_list}}
-    end
-  end
-
-  defp validate_patterns(_patterns, field) do
-    {:error, {:invalid, field, :not_list}}
-  end
-
-  defp validate_lang_resolver(:basename), do: :ok
-  defp validate_lang_resolver(fun) when is_function(fun, 1), do: :ok
-
-  defp validate_lang_resolver({mod, fun, args})
-       when is_atom(mod) and is_atom(fun) and is_list(args),
-       do: :ok
-
-  defp validate_lang_resolver(other) do
-    {:error, {:invalid, :lang_resolver, other}}
-  end
-
   defp wildcard_files(_base_path, []), do: []
 
   defp wildcard_files(base_path, patterns) do
@@ -157,7 +130,7 @@ defmodule ExLokaliseTransfer.Uploader.Files do
     |> Path.join()
   end
 
-  defp resolve_lang(entry, :basename) do
+  defp resolve_lang(%Entry{} = entry, :basename) do
     lang_iso =
       entry.basename
       |> Path.rootname()

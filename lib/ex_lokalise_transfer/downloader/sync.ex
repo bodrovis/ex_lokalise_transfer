@@ -13,8 +13,8 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
 
   alias ElixirLokaliseApi.Files
   alias ExLokaliseTransfer.Config
-  alias ExLokaliseTransfer.Helpers
-  alias ExLokaliseTransfer.Downloader.Bundle
+  alias ExLokaliseTransfer.Helpers.Normalization
+  alias ExLokaliseTransfer.Downloader.Bundle.Temp
   alias ExLokaliseTransfer.Downloader.Common
   alias ExLokaliseTransfer.Errors.Error
   alias ExLokaliseTransfer.Retry
@@ -31,7 +31,7 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
         retry: retry,
         extra: extra
       }) do
-    target_dir = Helpers.resolve_extract_to(extra)
+    target_dir = Common.resolve_extract_to(extra)
 
     Logger.debug("starting sync download",
       project_id: project_id,
@@ -39,8 +39,8 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
       extract_to: target_dir
     )
 
-    zip_path = Bundle.temp_zip_path(:sync)
-    data = Helpers.normalize_body(body)
+    zip_path = Temp.temp_zip_path(:sync)
+    data = Normalization.normalize_body(body)
 
     try do
       with {:ok, bundle_url} <- request_bundle_url(project_id, data, retry),
