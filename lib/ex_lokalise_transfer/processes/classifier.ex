@@ -1,5 +1,9 @@
 defmodule ExLokaliseTransfer.Processes.Classifier do
-  @moduledoc false
+  @moduledoc """
+  Internal helper for classifying Lokalise queued process states.
+
+  Not part of the public API.
+  """
 
   alias ElixirLokaliseApi.Model.QueuedProcess
 

@@ -1,4 +1,22 @@
 defmodule ExLokaliseTransfer.Downloader.Sync do
+  @moduledoc """
+  Performs a synchronous download of a Lokalise bundle and extracts it locally.
+
+  This module:
+    - requests a bundle URL from the Lokalise API
+    - downloads the ZIP archive
+    - extracts it into the target directory
+
+  The target directory is resolved from the config `extra` options.
+
+  This is a blocking (synchronous) operation and returns only after
+  the bundle is fully downloaded and extracted.
+
+  Returns:
+    - `:ok` on success
+    - `{:error, reason}` on failure
+  """
+
   @behaviour ExLokaliseTransfer.RunnerBehaviour
 
   alias ExLokaliseTransfer.Config

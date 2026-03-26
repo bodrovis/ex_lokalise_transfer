@@ -1,4 +1,8 @@
 defmodule ExLokaliseTransfer.Downloader.Bundle.Temp do
+  @moduledoc """
+  Utilities for generating temporary file paths for Lokalise bundles.
+  """
+
   @behaviour ExLokaliseTransfer.Downloader.Bundle.TempBehaviour
 
   @doc """
@@ -9,7 +13,6 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Temp do
     - a UTC timestamp
     - a unique integer suffix
   """
-
   @spec temp_zip_path(atom() | String.t()) :: String.t()
   def temp_zip_path(kind) do
     ts =

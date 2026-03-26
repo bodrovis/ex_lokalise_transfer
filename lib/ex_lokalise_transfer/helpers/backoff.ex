@@ -1,4 +1,24 @@
 defmodule ExLokaliseTransfer.Helpers.Backoff do
+  @moduledoc """
+  Provides exponential backoff calculation with optional jitter.
+
+  The delay grows exponentially based on the number of failed attempts:
+
+    - attempt 1 → min_sleep_ms
+    - attempt 2 → 2 * min_sleep_ms
+    - attempt 3 → 4 * min_sleep_ms
+    - ...
+
+  The result is always clamped between `min_sleep_ms` and `max_sleep_ms`.
+
+  Supports jitter strategies:
+    - `:full` — random value between 0 and base
+    - `:centered` — random value around base (≈ 0.5x–1.5x)
+    - any other value — no jitter applied
+
+  This module is used by retry logic to spread requests and avoid bursts.
+  """
+
   @behaviour ExLokaliseTransfer.Helpers.BackoffBehaviour
 
   # failed_attempt_n: 1,2,3... (not attempt_idx)
