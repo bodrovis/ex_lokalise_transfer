@@ -246,4 +246,4 @@ Note that in this case you'll need to set `LOKALISE_API_TOKEN` and `LOKALISE_PRO
 
 ## License
 
-MIT (c) [Elijah S. Krukowski](https://bodrovis.tech)
+BSD-3-Clause (c) [Elijah S. Krukowski](https://bodrovis.tech)
