@@ -229,7 +229,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     Application.get_env(
       :ex_lokalise_transfer,
       :lokalise_files_module,
-      ExLokaliseTransfer.LokaliseFilesImpl
+      ExLokaliseTransfer.Sdk.LokaliseFilesImpl
     )
   end
 end

@@ -1,7 +1,7 @@
-defmodule ExLokaliseTransfer.LokaliseFilesImpl do
+defmodule ExLokaliseTransfer.Sdk.LokaliseFilesImpl do
   @moduledoc false
 
-  @behaviour ExLokaliseTransfer.LokaliseFilesBehaviour
+  @behaviour ExLokaliseTransfer.Sdk.LokaliseFilesBehaviour
 
   alias ElixirLokaliseApi.Files
 

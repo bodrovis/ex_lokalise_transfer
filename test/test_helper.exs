@@ -33,7 +33,7 @@ Mox.defmock(ExLokaliseTransfer.RetryMock,
 )
 
 Mox.defmock(ExLokaliseTransfer.LokaliseFilesMock,
-  for: ExLokaliseTransfer.LokaliseFilesBehaviour
+  for: ExLokaliseTransfer.Sdk.LokaliseFilesBehaviour
 )
 
 Mox.defmock(ExLokaliseTransfer.RunnerMock,

@@ -1,4 +1,4 @@
-defmodule ExLokaliseTransfer.LokaliseFilesBehaviour do
+defmodule ExLokaliseTransfer.Sdk.LokaliseFilesBehaviour do
   @moduledoc false
 
   @callback upload(String.t(), map()) :: {:ok, map()} | {:error, term()}

@@ -13,9 +13,14 @@ defmodule ExLokaliseTransfer do
   alias ExLokaliseTransfer.Downloader
   alias ExLokaliseTransfer.Uploader
 
-  @type result :: :ok | {:error, term()}
+  @type download_result :: :ok | {:error, term()}
 
-  @spec upload(Keyword.t()) :: result()
+  @type upload_result ::
+          {:ok, ExLokaliseTransfer.Uploader.Async.summary()}
+          | {:error, ExLokaliseTransfer.Uploader.Async.summary()}
+          | {:error, term()}
+
+  @spec upload(Keyword.t()) :: upload_result()
   def upload(opts \\ []) do
     config = Config.build(opts, Uploader.Common.default_opts())
 
@@ -27,24 +32,24 @@ defmodule ExLokaliseTransfer do
   @doc """
   Runs the default download flow.
   """
-  @spec download(Keyword.t()) :: result()
-  @spec download() :: result()
+  @spec download(Keyword.t()) :: download_result()
+  @spec download() :: download_result()
   def download(opts \\ []), do: download_sync(opts)
 
   @doc """
   Runs the sync downloader.
   """
-  @spec download_sync(Keyword.t()) :: result()
+  @spec download_sync(Keyword.t()) :: download_result()
   def download_sync(opts \\ []) do
     do_download(downloader_sync_module(), opts)
   end
 
-  @spec download_async(Keyword.t()) :: result()
+  @spec download_async(Keyword.t()) :: download_result()
   def download_async(opts \\ []) do
     do_download(downloader_async_module(), opts)
   end
 
-  @spec do_download(module(), Keyword.t()) :: result()
+  @spec do_download(module(), Keyword.t()) :: download_result()
   defp do_download(mod, opts) do
     config =
       opts
