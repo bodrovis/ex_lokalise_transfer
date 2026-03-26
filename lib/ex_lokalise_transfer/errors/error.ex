@@ -34,8 +34,7 @@ defmodule ExLokaliseTransfer.Errors.Error do
   message, or unexpected.
   """
   @spec normalize({:error, any()}, source()) :: {:error, t()}
-  def normalize({:error, {data, status}}, source)
-      when is_integer(status) and status >= 100 and status <= 599 do
+  def normalize({:error, {data, status}}, source) when is_integer(status) and status >= 100 and status <= 599 do
     {message, reason, code, raw, details} =
       parse_http_body(data, status, source)
 
@@ -93,19 +92,17 @@ defmodule ExLokaliseTransfer.Errors.Error do
     raw = body_to_string(data)
     trimmed = String.trim(raw)
 
-    cond do
-      non_json?(trimmed) ->
-        {http_status_text(status), "non-json error body", nil, trimmed, %{}}
+    if non_json?(trimmed) do
+      {http_status_text(status), "non-json error body", nil, trimmed, %{}}
+    else
+      case Jason.decode(trimmed) do
+        {:ok, json} ->
+          parse_lokalise_json(json, status, trimmed)
 
-      true ->
-        case Jason.decode(trimmed) do
-          {:ok, json} ->
-            parse_lokalise_json(json, status, trimmed)
-
-          {:error, err} ->
-            {http_status_text(status), "invalid json in error body", nil, trimmed,
-             %{"unmarshal_error" => Exception.message(err)}}
-        end
+        {:error, err} ->
+          {http_status_text(status), "invalid json in error body", nil, trimmed,
+           %{"unmarshal_error" => Exception.message(err)}}
+      end
     end
   end
 

@@ -8,11 +8,11 @@ defmodule ExLokaliseTransfer.Retry do
 
   @behaviour ExLokaliseTransfer.RetryBehaviour
 
-  require Logger
-
   alias ExLokaliseTransfer.Errors.Error
-  alias ExLokaliseTransfer.Helpers.Backoff
   alias ExLokaliseTransfer.Errors.Retryable
+  alias ExLokaliseTransfer.Helpers.Backoff
+
+  require Logger
 
   @type jitter_mode :: :full | :centered
 

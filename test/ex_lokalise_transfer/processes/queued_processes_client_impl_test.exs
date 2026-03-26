@@ -1,12 +1,12 @@
 defmodule ExLokaliseTransfer.Processes.QueuedProcessesClientImplTest do
   use ExLokaliseTransfer.Case, async: true
 
-  setup {ExLokaliseTransfer.Case, :set_queued_processes_impl_mocks}
+  import Mox
 
   alias ExLokaliseTransfer.Processes.QueuedProcessesClientImpl
   alias ExLokaliseTransfer.QueuedProcessesSdkMock
 
-  import Mox
+  setup {ExLokaliseTransfer.Case, :set_queued_processes_impl_mocks}
 
   test "find delegates to sdk" do
     expect(QueuedProcessesSdkMock, :find, fn "proj", "proc" ->

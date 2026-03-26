@@ -43,13 +43,11 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Safety do
   @spec zip_entry_name(term()) :: {:ok, String.t()} | :skip | :error
   defp zip_entry_name({:zip_comment, _}), do: :skip
 
-  defp zip_entry_name({:zip_file, name, _file_info, _comment, _offset, _comp_size})
-       when is_list(name),
-       do: {:ok, List.to_string(name)}
+  defp zip_entry_name({:zip_file, name, _file_info, _comment, _offset, _comp_size}) when is_list(name),
+    do: {:ok, List.to_string(name)}
 
-  defp zip_entry_name({:zip_file, name, _file_info, _comment, _offset, _comp_size})
-       when is_binary(name),
-       do: {:ok, name}
+  defp zip_entry_name({:zip_file, name, _file_info, _comment, _offset, _comp_size}) when is_binary(name),
+    do: {:ok, name}
 
   defp zip_entry_name(name) when is_list(name), do: {:ok, List.to_string(name)}
   defp zip_entry_name(name) when is_binary(name), do: {:ok, name}

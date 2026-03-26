@@ -6,11 +6,13 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
 
   @behaviour ExLokaliseTransfer.Processes.BatchPollerBehaviour
 
-  require Logger
-
   alias ElixirLokaliseApi.Model.QueuedProcess
+  alias ExLokaliseTransfer.Helpers.Backoff
   alias ExLokaliseTransfer.Processes.Classifier
   alias ExLokaliseTransfer.Processes.Poller
+  alias ExLokaliseTransfer.Processes.SleepImpl
+
+  require Logger
 
   @max_concurrency 6
 
@@ -23,8 +25,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
   @type many_result :: [{String.t(), result()}]
 
   @spec check_many(String.t(), [String.t()]) :: many_check_result()
-  def check_many(project_id, process_ids)
-      when is_binary(project_id) and is_list(process_ids) do
+  def check_many(project_id, process_ids) when is_binary(project_id) and is_list(process_ids) do
     process_ids
     |> Task.async_stream(
       fn process_id ->
@@ -40,8 +41,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
   end
 
   @spec wait_many(String.t(), [String.t()], poll_opts()) :: many_result()
-  def wait_many(project_id, process_ids, opts)
-      when is_binary(project_id) and is_list(process_ids) and is_list(opts) do
+  def wait_many(project_id, process_ids, opts) when is_binary(project_id) and is_list(process_ids) and is_list(opts) do
     max_attempts = Keyword.fetch!(opts, :max_attempts)
     uniq_ids = Enum.uniq(process_ids)
 
@@ -55,8 +55,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
 
   defp do_wait_many([], _project_id, _opts, _attempt_idx, _max_attempts, acc), do: acc
 
-  defp do_wait_many(process_ids, project_id, _opts, attempt_idx, max_attempts, acc)
-       when attempt_idx >= max_attempts do
+  defp do_wait_many(process_ids, project_id, _opts, attempt_idx, max_attempts, acc) when attempt_idx >= max_attempts do
     round_results = check_many(project_id, process_ids)
     {done_map, pending_ids} = partition_many_results(round_results)
 
@@ -135,22 +134,20 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
   defp to_terminal_result({:error, reason}), do: {:error, reason}
 
   defp safe_check(project_id, process_id) do
-    try do
-      poller_module().check(project_id, process_id)
-    rescue
-      e ->
-        {:error, {:exception, Exception.message(e)}}
-    catch
-      kind, reason ->
-        {:error, {kind, reason}}
-    end
+    poller_module().check(project_id, process_id)
+  rescue
+    e ->
+      {:error, {:exception, Exception.message(e)}}
+  catch
+    kind, reason ->
+      {:error, {kind, reason}}
   end
 
   defp poller_module do
     Application.get_env(
       :ex_lokalise_transfer,
       :poller_module,
-      ExLokaliseTransfer.Processes.Poller
+      Poller
     )
   end
 
@@ -158,7 +155,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
     Application.get_env(
       :ex_lokalise_transfer,
       :backoff_module,
-      ExLokaliseTransfer.Helpers.Backoff
+      Backoff
     )
   end
 
@@ -166,7 +163,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
     Application.get_env(
       :ex_lokalise_transfer,
       :sleep_module,
-      ExLokaliseTransfer.Processes.SleepImpl
+      SleepImpl
     )
   end
 end

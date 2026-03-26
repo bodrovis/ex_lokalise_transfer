@@ -1,10 +1,10 @@
 defmodule ExLokaliseTransferTest do
   use ExLokaliseTransfer.Case, async: false
 
-  setup {ExLokaliseTransfer.Case, :set_top_level_runner_mocks}
-
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.RunnerMock
+
+  setup {ExLokaliseTransfer.Case, :set_top_level_runner_mocks}
 
   test "download_async/1 builds config and delegates to async downloader" do
     expect(RunnerMock, :run, 1, fn %Config{} = config ->

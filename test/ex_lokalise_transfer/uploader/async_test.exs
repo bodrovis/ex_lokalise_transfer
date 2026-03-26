@@ -1,15 +1,16 @@
 defmodule ExLokaliseTransfer.Uploader.AsyncTest do
   use ExLokaliseTransfer.Case, async: false
 
-  setup {ExLokaliseTransfer.Case, :set_uploader_async_dependency_mocks}
-
   alias ExLokaliseTransfer.BatchPollerMock
   alias ExLokaliseTransfer.Config
+  alias ExLokaliseTransfer.Errors.Error
   alias ExLokaliseTransfer.LokaliseFilesMock
   alias ExLokaliseTransfer.RetryMock
-  alias ExLokaliseTransfer.UploadFilesMock
   alias ExLokaliseTransfer.Uploader.Async
   alias ExLokaliseTransfer.Uploader.Files.Entry
+  alias ExLokaliseTransfer.UploadFilesMock
+
+  setup {ExLokaliseTransfer.Case, :set_uploader_async_dependency_mocks}
 
   @project_id "proj_123"
 
@@ -200,8 +201,7 @@ defmodule ExLokaliseTransfer.Uploader.AsyncTest do
              ]
 
       assert summary.errors == [
-               {:enqueue_error, "priv/locales/en.json",
-                {:file_read_failed, missing_path, :enoent}}
+               {:enqueue_error, "priv/locales/en.json", {:file_read_failed, missing_path, :enoent}}
              ]
     end
 
@@ -298,8 +298,7 @@ defmodule ExLokaliseTransfer.Uploader.AsyncTest do
              ]
 
       assert summary.errors == [
-               {:process_error, "priv/locales/lv.json", "proc_lv",
-                {:process_failed, %{status: "failed"}}}
+               {:process_error, "priv/locales/lv.json", "proc_lv", {:process_failed, %{status: "failed"}}}
              ]
     end
 
@@ -337,7 +336,7 @@ defmodule ExLokaliseTransfer.Uploader.AsyncTest do
       file_path = write_tmp_file!("hello")
       entry1 = entry(file_path, "priv/locales/en.json", "en.json", ".json", "en")
 
-      err = %ExLokaliseTransfer.Errors.Error{
+      err = %Error{
         source: :lokalise,
         kind: :http,
         status: 429,

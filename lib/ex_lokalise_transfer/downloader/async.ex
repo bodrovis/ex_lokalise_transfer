@@ -9,16 +9,17 @@ defmodule ExLokaliseTransfer.Downloader.Async do
 
   @behaviour ExLokaliseTransfer.RunnerBehaviour
 
-  require Logger
-
-  alias ExLokaliseTransfer.Helpers.Normalization
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Downloader.Bundle.Temp
   alias ExLokaliseTransfer.Downloader.Bundle.Transfer
   alias ExLokaliseTransfer.Downloader.Common
   alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.Helpers.Normalization
   alias ExLokaliseTransfer.Processes.Poller
   alias ExLokaliseTransfer.Retry
+  alias ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+
+  require Logger
 
   @doc """
   Enqueues an async Lokalise bundle build, waits for completion, then downloads
@@ -27,13 +28,7 @@ defmodule ExLokaliseTransfer.Downloader.Async do
   Returns `:ok` on success or `{:error, reason}` on failure.
   """
   @spec run(Config.t()) :: :ok | {:error, term()}
-  def run(%Config{
-        project_id: project_id,
-        body: body,
-        retry: retry,
-        poll: poll,
-        extra: extra
-      }) do
+  def run(%Config{project_id: project_id, body: body, retry: retry, poll: poll, extra: extra}) do
     target_dir = Common.resolve_extract_to(extra)
 
     Logger.debug("starting async download",
@@ -48,9 +43,8 @@ defmodule ExLokaliseTransfer.Downloader.Async do
     try do
       with {:ok, process_id} <- request_async_process(project_id, data, retry),
            {:ok, process} <- poller_module().wait(project_id, process_id, poll || []),
-           {:ok, bundle_url} <- extract_download_url(process),
-           :ok <- transfer_module().download_and_extract(bundle_url, zip_path, target_dir, retry) do
-        :ok
+           {:ok, bundle_url} <- extract_download_url(process) do
+        transfer_module().download_and_extract(bundle_url, zip_path, target_dir, retry)
       end
     after
       File.rm(zip_path)
@@ -85,10 +79,10 @@ defmodule ExLokaliseTransfer.Downloader.Async do
   end
 
   defp normalize_url(url) when is_binary(url) do
-    if String.trim(url) != "" do
-      {:ok, url}
-    else
+    if String.trim(url) == "" do
       :error
+    else
+      {:ok, url}
     end
   end
 
@@ -140,7 +134,7 @@ defmodule ExLokaliseTransfer.Downloader.Async do
     Application.get_env(
       :ex_lokalise_transfer,
       :lokalise_files_module,
-      ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+      LokaliseFilesImpl
     )
   end
 end

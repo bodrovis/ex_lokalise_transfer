@@ -35,8 +35,7 @@ defmodule ExLokaliseTransfer.Processes.Classifier do
     {:error, {:process_cancelled, process}}
   end
 
-  def classify(%QueuedProcess{status: status} = process)
-      when is_binary(status) and status != "" do
+  def classify(%QueuedProcess{status: status} = process) when is_binary(status) and status != "" do
     {:pending, process}
   end
 

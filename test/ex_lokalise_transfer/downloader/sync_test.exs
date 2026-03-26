@@ -4,10 +4,10 @@ defmodule ExLokaliseTransfer.Downloader.SyncTest do
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Downloader.Sync
   alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.LokaliseFilesMock
   alias ExLokaliseTransfer.RetryMock
   alias ExLokaliseTransfer.TempMock
   alias ExLokaliseTransfer.TransferMock
-  alias ExLokaliseTransfer.LokaliseFilesMock
 
   setup {ExLokaliseTransfer.Case, :set_downloader_sync_dependency_mocks}
 
@@ -148,10 +148,7 @@ defmodule ExLokaliseTransfer.Downloader.SyncTest do
       end)
 
       TransferMock
-      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip",
-                                          ^zip_path,
-                                          _target_dir,
-                                          _retry ->
+      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip", ^zip_path, _target_dir, _retry ->
         {:error, {:http_error, 404, "not found"}}
       end)
 

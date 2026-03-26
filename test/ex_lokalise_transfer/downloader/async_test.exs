@@ -45,10 +45,7 @@ defmodule ExLokaliseTransfer.Downloader.AsyncTest do
       end)
 
       TransferMock
-      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip",
-                                          ^zip_path,
-                                          target_dir,
-                                          retry_opts ->
+      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip", ^zip_path, target_dir, retry_opts ->
         assert target_dir == Path.expand("./priv/locales")
         assert retry_opts == retry_opts_fixture()
         :ok
@@ -226,10 +223,7 @@ defmodule ExLokaliseTransfer.Downloader.AsyncTest do
       end)
 
       TransferMock
-      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip",
-                                          ^zip_path,
-                                          _target_dir,
-                                          _retry_opts ->
+      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip", ^zip_path, _target_dir, _retry_opts ->
         :ok
       end)
 
@@ -262,10 +256,7 @@ defmodule ExLokaliseTransfer.Downloader.AsyncTest do
       end)
 
       TransferMock
-      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip",
-                                          ^zip_path,
-                                          _target_dir,
-                                          _retry_opts ->
+      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip", ^zip_path, _target_dir, _retry_opts ->
         :ok
       end)
 
@@ -298,10 +289,7 @@ defmodule ExLokaliseTransfer.Downloader.AsyncTest do
       end)
 
       TransferMock
-      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip",
-                                          ^zip_path,
-                                          _target_dir,
-                                          _retry_opts ->
+      |> expect(:download_and_extract, fn "https://s3.example.com/bundle.zip", ^zip_path, _target_dir, _retry_opts ->
         {:error, {:http_error, 404, "not found"}}
       end)
 

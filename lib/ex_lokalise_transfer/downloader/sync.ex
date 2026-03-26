@@ -1,15 +1,16 @@
 defmodule ExLokaliseTransfer.Downloader.Sync do
   @behaviour ExLokaliseTransfer.RunnerBehaviour
 
-  require Logger
-
   alias ExLokaliseTransfer.Config
-  alias ExLokaliseTransfer.Helpers.Normalization
-  alias ExLokaliseTransfer.Downloader.Common
-  alias ExLokaliseTransfer.Errors.Error
-  alias ExLokaliseTransfer.Retry
   alias ExLokaliseTransfer.Downloader.Bundle.Temp
   alias ExLokaliseTransfer.Downloader.Bundle.Transfer
+  alias ExLokaliseTransfer.Downloader.Common
+  alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.Helpers.Normalization
+  alias ExLokaliseTransfer.Retry
+  alias ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+
+  require Logger
 
   @doc """
   Downloads and extracts the Lokalise bundle into the configured locales path.
@@ -17,12 +18,7 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
   Returns `:ok` on success or `{:error, reason}` on failure.
   """
   @spec run(Config.t()) :: :ok | {:error, term()}
-  def run(%Config{
-        project_id: project_id,
-        body: body,
-        retry: retry,
-        extra: extra
-      }) do
+  def run(%Config{project_id: project_id, body: body, retry: retry, extra: extra}) do
     target_dir = Common.resolve_extract_to(extra)
 
     Logger.debug("starting sync download",
@@ -35,9 +31,8 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
     data = Normalization.normalize_body(body)
 
     try do
-      with {:ok, bundle_url} <- request_bundle_url(project_id, data, retry),
-           :ok <- transfer_module().download_and_extract(bundle_url, zip_path, target_dir, retry) do
-        :ok
+      with {:ok, bundle_url} <- request_bundle_url(project_id, data, retry) do
+        transfer_module().download_and_extract(bundle_url, zip_path, target_dir, retry)
       end
     after
       File.rm(zip_path)
@@ -61,20 +56,11 @@ defmodule ExLokaliseTransfer.Downloader.Sync do
     end
   end
 
-  defp retry_module,
-    do: Application.get_env(:ex_lokalise_transfer, :retry_module, Retry)
+  defp retry_module, do: Application.get_env(:ex_lokalise_transfer, :retry_module, Retry)
 
-  defp temp_module,
-    do: Application.get_env(:ex_lokalise_transfer, :downloader_temp_module, Temp)
+  defp temp_module, do: Application.get_env(:ex_lokalise_transfer, :downloader_temp_module, Temp)
 
-  defp transfer_module,
-    do: Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module, Transfer)
+  defp transfer_module, do: Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module, Transfer)
 
-  defp lokalise_files_module,
-    do:
-      Application.get_env(
-        :ex_lokalise_transfer,
-        :lokalise_files_module,
-        ExLokaliseTransfer.Sdk.LokaliseFilesImpl
-      )
+  defp lokalise_files_module, do: Application.get_env(:ex_lokalise_transfer, :lokalise_files_module, LokaliseFilesImpl)
 end

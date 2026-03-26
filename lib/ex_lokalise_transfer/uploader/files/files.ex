@@ -64,7 +64,7 @@ defmodule ExLokaliseTransfer.Uploader.Files do
     |> Enum.reduce_while({:ok, []}, fn %Entry{} = entry, {:ok, acc} ->
       case resolve_lang(entry, resolver) do
         {:ok, lang_iso} ->
-          {:cont, {:ok, [%Entry{entry | lang_iso: lang_iso} | acc]}}
+          {:cont, {:ok, [%{entry | lang_iso: lang_iso} | acc]}}
 
         {:error, reason} ->
           {:halt, {:error, reason}}

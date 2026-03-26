@@ -99,8 +99,7 @@ defmodule ExLokaliseTransfer.Case do
     originals = %{
       uploader_async_module: Application.get_env(:ex_lokalise_transfer, :uploader_async_module),
       downloader_sync_module: Application.get_env(:ex_lokalise_transfer, :downloader_sync_module),
-      downloader_async_module:
-        Application.get_env(:ex_lokalise_transfer, :downloader_async_module)
+      downloader_async_module: Application.get_env(:ex_lokalise_transfer, :downloader_async_module)
     }
 
     Application.put_env(
@@ -130,8 +129,7 @@ defmodule ExLokaliseTransfer.Case do
     originals = %{
       retry_module: Application.get_env(:ex_lokalise_transfer, :retry_module),
       downloader_temp_module: Application.get_env(:ex_lokalise_transfer, :downloader_temp_module),
-      downloader_transfer_module:
-        Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module),
+      downloader_transfer_module: Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module),
       lokalise_files_module: Application.get_env(:ex_lokalise_transfer, :lokalise_files_module)
     }
 
@@ -164,8 +162,7 @@ defmodule ExLokaliseTransfer.Case do
     originals = %{
       retry_module: Application.get_env(:ex_lokalise_transfer, :retry_module),
       bundle_fetcher_module: Application.get_env(:ex_lokalise_transfer, :bundle_fetcher_module),
-      bundle_extractor_module:
-        Application.get_env(:ex_lokalise_transfer, :bundle_extractor_module)
+      bundle_extractor_module: Application.get_env(:ex_lokalise_transfer, :bundle_extractor_module)
     }
 
     Application.put_env(
@@ -194,8 +191,7 @@ defmodule ExLokaliseTransfer.Case do
   def set_process_dependency_mocks(_context) do
     originals = %{
       poller_module: Application.get_env(:ex_lokalise_transfer, :poller_module),
-      queued_processes_client:
-        Application.get_env(:ex_lokalise_transfer, :queued_processes_client),
+      queued_processes_client: Application.get_env(:ex_lokalise_transfer, :queued_processes_client),
       backoff_module: Application.get_env(:ex_lokalise_transfer, :backoff_module),
       sleep_module: Application.get_env(:ex_lokalise_transfer, :sleep_module)
     }
@@ -231,8 +227,7 @@ defmodule ExLokaliseTransfer.Case do
 
   def set_downloader_bundle_dependency_mocks(_context) do
     originals = %{
-      downloader_http_stream_client:
-        Application.get_env(:ex_lokalise_transfer, :downloader_http_stream_client)
+      downloader_http_stream_client: Application.get_env(:ex_lokalise_transfer, :downloader_http_stream_client)
     }
 
     Application.put_env(
@@ -251,8 +246,7 @@ defmodule ExLokaliseTransfer.Case do
       retry_module: Application.get_env(:ex_lokalise_transfer, :retry_module),
       poller_module: Application.get_env(:ex_lokalise_transfer, :poller_module),
       downloader_temp_module: Application.get_env(:ex_lokalise_transfer, :downloader_temp_module),
-      downloader_transfer_module:
-        Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module),
+      downloader_transfer_module: Application.get_env(:ex_lokalise_transfer, :downloader_transfer_module),
       lokalise_files_module: Application.get_env(:ex_lokalise_transfer, :lokalise_files_module)
     }
 

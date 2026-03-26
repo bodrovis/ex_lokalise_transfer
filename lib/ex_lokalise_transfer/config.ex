@@ -65,9 +65,8 @@ defmodule ExLokaliseTransfer.Config do
     with :ok <- validate_non_empty(config.project_id, :project_id),
          :ok <- validate_keyword_or_empty(config.body, :body),
          :ok <- validate_backoff_opts(config.retry, :retry),
-         :ok <- validate_optional_backoff_opts(config.poll, :poll),
-         :ok <- validate_keyword_or_empty(config.extra, :extra) do
-      :ok
+         :ok <- validate_optional_backoff_opts(config.poll, :poll) do
+      validate_keyword_or_empty(config.extra, :extra)
     end
   end
 
@@ -106,9 +105,8 @@ defmodule ExLokaliseTransfer.Config do
       with :ok <- validate_int_min(opts, :max_attempts, 1),
            :ok <- validate_int_min(opts, :min_sleep_ms, 0),
            :ok <- validate_int_min(opts, :max_sleep_ms, 0),
-           :ok <- validate_min_le_max(opts, field),
-           :ok <- validate_jitter(opts, field) do
-        :ok
+           :ok <- validate_min_le_max(opts, field) do
+        validate_jitter(opts, field)
       end
     else
       {:error, {:invalid, field, :not_keyword}}
@@ -169,12 +167,8 @@ defmodule ExLokaliseTransfer.Config do
     defaults = Keyword.get(default_opts, key)
     overrides = Keyword.get(opts, key)
 
-    cond do
-      is_nil(defaults) and is_nil(overrides) ->
-        nil
-
-      true ->
-        Keyword.merge(defaults || [], overrides || [])
+    if !(is_nil(defaults) and is_nil(overrides)) do
+      Keyword.merge(defaults || [], overrides || [])
     end
   end
 

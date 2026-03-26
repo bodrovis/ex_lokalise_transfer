@@ -36,8 +36,7 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
 
   @spec download_zip_stream(term(), String.t(), String.t()) ::
           {:ok, :downloaded} | {:error, error_reason()}
-  def download_zip_stream(finch_name, url, path)
-      when is_binary(url) and is_binary(path) do
+  def download_zip_stream(finch_name, url, path) when is_binary(url) and is_binary(path) do
     tmp_path = path <> @tmp_suffix
     http_client = http_stream_client()
 
@@ -92,9 +91,8 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
   end
 
   defp prepare_tmp_file(final_path, tmp_path) do
-    with :ok <- ensure_parent_dir(final_path),
-         :ok <- cleanup_tmp(tmp_path) do
-      :ok
+    with :ok <- ensure_parent_dir(final_path) do
+      cleanup_tmp(tmp_path)
     end
   end
 
@@ -138,15 +136,13 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
   end
 
   defp write_chunk(io, chunk, acc) do
-    try do
-      IO.binwrite(io, chunk)
-      acc
-      # coveralls-ignore-start
-    rescue
-      e ->
-        %{acc | write_error: Exception.message(e)}
-        # coveralls-ignore-stop
-    end
+    IO.binwrite(io, chunk)
+    acc
+    # coveralls-ignore-start
+  rescue
+    e ->
+      %{acc | write_error: Exception.message(e)}
+      # coveralls-ignore-stop
   end
 
   defp collect_error_chunk(chunk, acc) do
@@ -164,8 +160,7 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
   end
 
   # This might happen but only in super-strange cases
-  defp handle_stream_result({:ok, %{write_error: reason}}, tmp_path, _path)
-       when not is_nil(reason) do
+  defp handle_stream_result({:ok, %{write_error: reason}}, tmp_path, _path) when not is_nil(reason) do
     # coveralls-ignore-start
     cleanup_tmp(tmp_path)
     # coveralls-ignore-stop
@@ -176,8 +171,7 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
     finalize_download(tmp_path, path)
   end
 
-  defp handle_stream_result({:ok, %{status: status, err_body: body}}, tmp_path, _path)
-       when is_integer(status) do
+  defp handle_stream_result({:ok, %{status: status, err_body: body}}, tmp_path, _path) when is_integer(status) do
     cleanup_tmp(tmp_path)
     {:error, {:http_error, status, String.trim(body)}}
   end

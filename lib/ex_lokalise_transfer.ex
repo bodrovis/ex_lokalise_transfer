@@ -16,7 +16,9 @@ defmodule ExLokaliseTransfer do
 
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Downloader
+  alias ExLokaliseTransfer.Downloader.Sync
   alias ExLokaliseTransfer.Uploader
+  alias ExLokaliseTransfer.Uploader.Async
 
   @type opts :: Keyword.t()
 
@@ -92,7 +94,7 @@ defmodule ExLokaliseTransfer do
     Application.get_env(
       :ex_lokalise_transfer,
       :uploader_async_module,
-      ExLokaliseTransfer.Uploader.Async
+      Async
     )
   end
 
@@ -100,7 +102,7 @@ defmodule ExLokaliseTransfer do
     Application.get_env(
       :ex_lokalise_transfer,
       :downloader_sync_module,
-      ExLokaliseTransfer.Downloader.Sync
+      Sync
     )
   end
 

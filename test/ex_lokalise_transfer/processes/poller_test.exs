@@ -1,13 +1,13 @@
 defmodule ExLokaliseTransfer.Processes.PollerTest do
   use ExLokaliseTransfer.Case, async: false
 
-  setup {ExLokaliseTransfer.Case, :set_process_dependency_mocks}
-
   alias ElixirLokaliseApi.Model.QueuedProcess
   alias ExLokaliseTransfer.BackoffMock
   alias ExLokaliseTransfer.Processes.Poller
   alias ExLokaliseTransfer.QueuedProcessesClientMock
   alias ExLokaliseTransfer.SleepMock
+
+  setup {ExLokaliseTransfer.Case, :set_process_dependency_mocks}
 
   @project_id "proj_123"
   @process_id "proc_123"

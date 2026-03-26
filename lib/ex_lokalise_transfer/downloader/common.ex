@@ -52,9 +52,8 @@ defmodule ExLokaliseTransfer.Downloader.Common do
   @spec validate(Config.t()) :: :ok | {:error, term()}
   def validate(%Config{} = config) do
     with :ok <- Config.validate_common(config),
-         :ok <- validate_body(config.body),
-         :ok <- validate_extra(config.extra) do
-      :ok
+         :ok <- validate_body(config.body) do
+      validate_extra(config.extra)
     end
   end
 

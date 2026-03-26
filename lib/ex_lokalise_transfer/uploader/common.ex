@@ -33,9 +33,8 @@ defmodule ExLokaliseTransfer.Uploader.Common do
   @spec validate(Config.t()) :: :ok | {:error, term()}
   def validate(%Config{} = config) do
     with :ok <- Config.validate_common(config),
-         :ok <- validate_body(config.body),
-         :ok <- validate_extra(config.extra) do
-      :ok
+         :ok <- validate_body(config.body) do
+      validate_extra(config.extra)
     end
   end
 
@@ -48,9 +47,8 @@ defmodule ExLokaliseTransfer.Uploader.Common do
   defp validate_extra(extra) do
     with :ok <- validate_locales_path(extra),
          :ok <- validate_patterns(extra, :include_patterns),
-         :ok <- validate_patterns(extra, :exclude_patterns),
-         :ok <- validate_lang_resolver(extra) do
-      :ok
+         :ok <- validate_patterns(extra, :exclude_patterns) do
+      validate_lang_resolver(extra)
     end
   end
 

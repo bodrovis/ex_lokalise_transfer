@@ -1,4 +1,6 @@
 defmodule ExLokaliseTransfer.Downloader.Bundle.Temp do
+  @behaviour ExLokaliseTransfer.Downloader.Bundle.TempBehaviour
+
   @doc """
   Builds a unique temporary ZIP file path in the system temp directory.
 
@@ -7,8 +9,6 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Temp do
     - a UTC timestamp
     - a unique integer suffix
   """
-
-  @behaviour ExLokaliseTransfer.Downloader.Bundle.TempBehaviour
 
   @spec temp_zip_path(atom() | String.t()) :: String.t()
   def temp_zip_path(kind) do

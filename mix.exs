@@ -42,7 +42,8 @@ defmodule ExLokaliseTransfer.MixProject do
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18.1", only: :test},
       {:ex_doc, "~> 0.37", only: :dev},
-      {:mox, "~> 1.2", only: :test}
+      {:mox, "~> 1.2", only: :test},
+      {:quokka, "~> 2.12", only: [:dev, :test], runtime: false}
     ]
   end
 

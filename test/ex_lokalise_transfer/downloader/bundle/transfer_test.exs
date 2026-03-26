@@ -1,10 +1,10 @@
 defmodule ExLokaliseTransfer.Downloader.Bundle.TransferTest do
   use ExLokaliseTransfer.Case, async: true
 
+  alias ExLokaliseTransfer.BundleExtractorMock
+  alias ExLokaliseTransfer.BundleFetcherMock
   alias ExLokaliseTransfer.Downloader.Bundle.Transfer
   alias ExLokaliseTransfer.RetryMock
-  alias ExLokaliseTransfer.BundleFetcherMock
-  alias ExLokaliseTransfer.BundleExtractorMock
 
   setup {ExLokaliseTransfer.Case, :set_downloader_transfer_dependency_mocks}
 

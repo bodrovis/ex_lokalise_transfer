@@ -32,8 +32,7 @@ defmodule ExLokaliseTransfer.Errors.Retryable do
     end
   end
 
-  def retryable?(%Error{kind: :transport, details: %{"reason_atom" => reason}})
-      when is_atom(reason) do
+  def retryable?(%Error{kind: :transport, details: %{"reason_atom" => reason}}) when is_atom(reason) do
     not MapSet.member?(@non_retryable_transport_reasons, reason)
   end
 

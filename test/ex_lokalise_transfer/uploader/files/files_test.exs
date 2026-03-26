@@ -440,7 +440,7 @@ defmodule ExLokaliseTransfer.Uploader.FilesTest do
     def constant(_entry, value), do: value
 
     def from_suffix(%Entry{basename: basename}, suffix, lang_iso) do
-      if String.ends_with?(basename, suffix), do: lang_iso, else: nil
+      if String.ends_with?(basename, suffix), do: lang_iso
     end
   end
 

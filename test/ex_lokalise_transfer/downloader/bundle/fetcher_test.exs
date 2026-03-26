@@ -1,10 +1,10 @@
 defmodule ExLokaliseTransfer.Downloader.Bundle.FetcherTest do
   use ExLokaliseTransfer.Case, async: true
 
-  setup {ExLokaliseTransfer.Case, :set_downloader_bundle_dependency_mocks}
-
   alias ExLokaliseTransfer.Downloader.Bundle.Fetcher
   alias ExLokaliseTransfer.HTTPStreamClientMock
+
+  setup {ExLokaliseTransfer.Case, :set_downloader_bundle_dependency_mocks}
 
   describe "download_zip_stream/3" do
     test "downloads response body into final file on HTTP 200" do

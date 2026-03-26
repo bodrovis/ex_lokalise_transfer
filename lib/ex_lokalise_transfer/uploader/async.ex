@@ -16,13 +16,15 @@ defmodule ExLokaliseTransfer.Uploader.Async do
 
   @behaviour ExLokaliseTransfer.RunnerBehaviour
 
-  require Logger
-
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Errors.Error
   alias ExLokaliseTransfer.Helpers.Normalization
   alias ExLokaliseTransfer.Processes.BatchPoller
+  alias ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+  alias ExLokaliseTransfer.Uploader.Files
   alias ExLokaliseTransfer.Uploader.Files.Entry
+
+  require Logger
 
   @max_concurrency 6
 
@@ -56,13 +58,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
   Runs the async uploader.
   """
   @spec run(Config.t()) :: result() | {:error, term()}
-  def run(%Config{
-        project_id: project_id,
-        body: body,
-        retry: retry,
-        poll: poll,
-        extra: extra
-      }) do
+  def run(%Config{project_id: project_id, body: body, retry: retry, poll: poll, extra: extra}) do
     Logger.debug("starting async upload",
       project_id: project_id,
       operation: :upload_async
@@ -117,7 +113,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
 
   defp enqueue_one(project_id, %Entry{} = entry, body_map, retry) do
     with {:ok, encoded_data} <- read_and_encode_file(entry.abs_path),
-         payload <- build_upload_payload(entry, encoded_data, body_map),
+         payload = build_upload_payload(entry, encoded_data, body_map),
          {:ok, process_id} <- request_upload(project_id, payload, retry) do
       {:ok, %{entry: entry, process_id: process_id}}
     else
@@ -205,7 +201,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     Application.get_env(
       :ex_lokalise_transfer,
       :upload_files_module,
-      ExLokaliseTransfer.Uploader.Files
+      Files
     )
   end
 
@@ -213,7 +209,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     Application.get_env(
       :ex_lokalise_transfer,
       :batch_poller_module,
-      ExLokaliseTransfer.Processes.BatchPoller
+      BatchPoller
     )
   end
 
@@ -229,7 +225,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     Application.get_env(
       :ex_lokalise_transfer,
       :lokalise_files_module,
-      ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+      LokaliseFilesImpl
     )
   end
 end

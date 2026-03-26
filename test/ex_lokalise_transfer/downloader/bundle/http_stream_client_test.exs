@@ -1,12 +1,12 @@
 defmodule ExLokaliseTransfer.Downloader.Bundle.HTTPStreamClientTest do
   use ExLokaliseTransfer.Case, async: false
 
-  setup {ExLokaliseTransfer.Case, :set_finch_mock}
-
   import Mox
 
-  alias ExLokaliseTransfer.FinchMock
   alias ExLokaliseTransfer.Downloader.Bundle.HTTPStreamClient
+  alias ExLokaliseTransfer.FinchMock
+
+  setup {ExLokaliseTransfer.Case, :set_finch_mock}
 
   test "delegates to Finch" do
     expect(FinchMock, :build, fn :get, "url" ->

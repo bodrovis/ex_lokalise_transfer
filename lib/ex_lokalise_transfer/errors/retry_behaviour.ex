@@ -4,5 +4,5 @@ defmodule ExLokaliseTransfer.RetryBehaviour do
   alias ExLokaliseTransfer.Errors.Error
 
   @callback run((-> {:ok, term()} | {:error, term()}), Error.source(), Keyword.t()) ::
-              {:ok, term()} | {:error, ExLokaliseTransfer.Errors.Error.t()}
+              {:ok, term()} | {:error, Error.t()}
 end

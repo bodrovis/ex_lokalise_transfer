@@ -1,12 +1,12 @@
 defmodule ExLokaliseTransfer.Sdk.LokaliseFilesImplTest do
   use ExLokaliseTransfer.Case, async: false
 
-  setup {ExLokaliseTransfer.Case, :set_lokalise_files_impl_mocks}
-
-  alias ExLokaliseTransfer.Sdk.LokaliseFilesImpl
-  alias ExLokaliseTransfer.LokaliseFilesSdkMock
-
   import Mox
+
+  alias ExLokaliseTransfer.LokaliseFilesSdkMock
+  alias ExLokaliseTransfer.Sdk.LokaliseFilesImpl
+
+  setup {ExLokaliseTransfer.Case, :set_lokalise_files_impl_mocks}
 
   test "upload delegates to sdk" do
     expect(LokaliseFilesSdkMock, :upload, fn "proj", %{a: 1} ->

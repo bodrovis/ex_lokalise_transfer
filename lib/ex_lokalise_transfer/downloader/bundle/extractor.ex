@@ -25,8 +25,7 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Extractor do
           | term()
 
   @spec extract_zip(String.t(), String.t()) :: :ok | {:error, extract_error()}
-  def extract_zip(zip_path, extract_to)
-      when is_binary(zip_path) and is_binary(extract_to) do
+  def extract_zip(zip_path, extract_to) when is_binary(zip_path) and is_binary(extract_to) do
     with :ok <- ensure_directory(extract_to),
          {:ok, entries} <- zip_entries(zip_path),
          :ok <- Safety.validate_zip_entries(entries) do

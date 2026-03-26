@@ -1,8 +1,8 @@
 defmodule ExLokaliseTransfer.RetryTest do
   use ExLokaliseTransfer.Case, async: true
 
-  alias ExLokaliseTransfer.Retry
   alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.Retry
 
   @opts_fast [max_attempts: 3, min_sleep_ms: 1, max_sleep_ms: 1, jitter: :full]
 

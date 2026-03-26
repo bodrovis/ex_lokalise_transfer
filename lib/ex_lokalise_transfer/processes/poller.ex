@@ -5,10 +5,13 @@ defmodule ExLokaliseTransfer.Processes.Poller do
 
   @behaviour ExLokaliseTransfer.Processes.PollerBehaviour
 
-  require Logger
-
   alias ElixirLokaliseApi.Model.QueuedProcess
+  alias ExLokaliseTransfer.Helpers.Backoff
   alias ExLokaliseTransfer.Processes.Classifier
+  alias ExLokaliseTransfer.Processes.QueuedProcessesClientImpl
+  alias ExLokaliseTransfer.Processes.SleepImpl
+
+  require Logger
 
   @type queued_process :: Classifier.queued_process()
   @type check_result :: Classifier.check_result()
@@ -31,14 +34,12 @@ defmodule ExLokaliseTransfer.Processes.Poller do
           | {:error, term()}
 
   @spec find(String.t(), String.t()) :: {:ok, queued_process()} | {:error, term()}
-  def find(project_id, process_id)
-      when is_binary(project_id) and is_binary(process_id) do
+  def find(project_id, process_id) when is_binary(project_id) and is_binary(process_id) do
     queued_processes_client().find(project_id, process_id)
   end
 
   @spec check(String.t(), String.t()) :: check_result()
-  def check(project_id, process_id)
-      when is_binary(project_id) and is_binary(process_id) do
+  def check(project_id, process_id) when is_binary(project_id) and is_binary(process_id) do
     case find(project_id, process_id) do
       {:ok, %QueuedProcess{} = process} ->
         Classifier.classify(process)
@@ -49,8 +50,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
   end
 
   @spec wait(String.t(), String.t(), poll_opts()) :: result()
-  def wait(project_id, process_id, opts)
-      when is_binary(project_id) and is_binary(process_id) and is_list(opts) do
+  def wait(project_id, process_id, opts) when is_binary(project_id) and is_binary(process_id) and is_list(opts) do
     max_attempts = Keyword.fetch!(opts, :max_attempts)
     do_wait(project_id, process_id, opts, 1, max_attempts)
   end
@@ -89,7 +89,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
     Application.get_env(
       :ex_lokalise_transfer,
       :queued_processes_client,
-      ExLokaliseTransfer.Processes.QueuedProcessesClientImpl
+      QueuedProcessesClientImpl
     )
   end
 
@@ -97,7 +97,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
     Application.get_env(
       :ex_lokalise_transfer,
       :backoff_module,
-      ExLokaliseTransfer.Helpers.Backoff
+      Backoff
     )
   end
 
@@ -105,7 +105,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
     Application.get_env(
       :ex_lokalise_transfer,
       :sleep_module,
-      ExLokaliseTransfer.Processes.SleepImpl
+      SleepImpl
     )
   end
 end

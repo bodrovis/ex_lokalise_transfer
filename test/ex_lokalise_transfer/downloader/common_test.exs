@@ -58,9 +58,7 @@ defmodule ExLokaliseTransfer.Downloader.CommonTest do
 
     test "returns error when retry opts are invalid" do
       config =
-        valid_config(
-          retry: [max_attempts: 0, min_sleep_ms: 1_000, max_sleep_ms: 2_000, jitter: :centered]
-        )
+        valid_config(retry: [max_attempts: 0, min_sleep_ms: 1_000, max_sleep_ms: 2_000, jitter: :centered])
 
       assert {:error, {:invalid, :max_attempts, {:lt, 1}}} =
                Common.validate(config)
@@ -68,9 +66,7 @@ defmodule ExLokaliseTransfer.Downloader.CommonTest do
 
     test "returns error when poll opts are invalid" do
       config =
-        valid_config(
-          poll: [max_attempts: 3, min_sleep_ms: 5_000, max_sleep_ms: 1_000, jitter: :centered]
-        )
+        valid_config(poll: [max_attempts: 3, min_sleep_ms: 5_000, max_sleep_ms: 1_000, jitter: :centered])
 
       assert {:error, {:invalid, :poll, :min_sleep_gt_max_sleep}} =
                Common.validate(config)
