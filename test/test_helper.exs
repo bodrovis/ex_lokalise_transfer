@@ -65,6 +65,21 @@ Mox.defmock(
   for: ExLokaliseTransfer.Downloader.Bundle.TransferBehaviour
 )
 
+Mox.defmock(
+  ExLokaliseTransfer.LokaliseFilesSdkMock,
+  for: ExLokaliseTransfer.Sdk.LokaliseFilesBehaviour
+)
+
+Mox.defmock(
+  ExLokaliseTransfer.QueuedProcessesSdkMock,
+  for: ExLokaliseTransfer.Processes.QueuedProcessesClient
+)
+
+Mox.defmock(
+  ExLokaliseTransfer.FinchMock,
+  for: ExLokaliseTransfer.Downloader.Bundle.FinchBehaviour
+)
+
 defmodule ExLokaliseTransfer.Case do
   @moduledoc false
   use ExUnit.CaseTemplate
@@ -309,6 +324,60 @@ defmodule ExLokaliseTransfer.Case do
     )
 
     on_exit(fn -> restore_envs(:ex_lokalise_transfer, originals) end)
+
+    :ok
+  end
+
+  def set_lokalise_files_impl_mocks(_context) do
+    original =
+      Application.get_env(:ex_lokalise_transfer, :lokalise_files_sdk_module)
+
+    Application.put_env(
+      :ex_lokalise_transfer,
+      :lokalise_files_sdk_module,
+      ExLokaliseTransfer.LokaliseFilesSdkMock
+    )
+
+    on_exit(fn ->
+      restore_env(:ex_lokalise_transfer, :lokalise_files_sdk_module, original)
+    end)
+
+    :ok
+  end
+
+  def set_queued_processes_impl_mocks(_context) do
+    original =
+      Application.get_env(:ex_lokalise_transfer, :queued_processes_sdk_module)
+
+    Application.put_env(
+      :ex_lokalise_transfer,
+      :queued_processes_sdk_module,
+      ExLokaliseTransfer.QueuedProcessesSdkMock
+    )
+
+    on_exit(fn ->
+      restore_env(
+        :ex_lokalise_transfer,
+        :queued_processes_sdk_module,
+        original
+      )
+    end)
+
+    :ok
+  end
+
+  def set_finch_mock(_context) do
+    original = Application.get_env(:ex_lokalise_transfer, :finch_module)
+
+    Application.put_env(
+      :ex_lokalise_transfer,
+      :finch_module,
+      ExLokaliseTransfer.FinchMock
+    )
+
+    on_exit(fn ->
+      restore_env(:ex_lokalise_transfer, :finch_module, original)
+    end)
 
     :ok
   end

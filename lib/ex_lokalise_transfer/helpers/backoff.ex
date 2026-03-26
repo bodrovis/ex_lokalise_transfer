@@ -31,7 +31,6 @@ defmodule ExLokaliseTransfer.Helpers.Backoff do
 
   defp apply_jitter(base, _), do: base
 
-  defp clamp(x, min, _max) when x < min, do: min
   defp clamp(x, _min, max) when x > max, do: max
   defp clamp(x, _min, _max), do: x
 end

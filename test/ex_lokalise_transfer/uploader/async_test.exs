@@ -332,6 +332,49 @@ defmodule ExLokaliseTransfer.Uploader.AsyncTest do
       assert summary.enqueue_successes == []
       assert summary.process_results == []
     end
+
+    test "returns {:error, summary} when upload request returns retry error" do
+      file_path = write_tmp_file!("hello")
+      entry1 = entry(file_path, "priv/locales/en.json", "en.json", ".json", "en")
+
+      err = %ExLokaliseTransfer.Errors.Error{
+        source: :lokalise,
+        kind: :http,
+        status: 429,
+        code: nil,
+        message: "rate limited"
+      }
+
+      expect(UploadFilesMock, :discover, 1, fn _extra ->
+        {:ok, [entry1]}
+      end)
+
+      expect(RetryMock, :run, 1, fn _fun, :lokalise, @retry_opts ->
+        {:error, err}
+      end)
+
+      config =
+        config(
+          body: [format: "json"],
+          extra: [locales_path: "./priv/locales"],
+          retry: @retry_opts,
+          poll: @poll_opts
+        )
+
+      assert {:error, summary} = Async.run(config)
+
+      assert summary.discovered_entries == [entry1]
+      assert summary.enqueue_successes == []
+      assert summary.process_results == []
+
+      assert summary.enqueue_errors == [
+               %{entry: entry1, error: err}
+             ]
+
+      assert summary.errors == [
+               {:enqueue_error, "priv/locales/en.json", err}
+             ]
+    end
   end
 
   defp config(overrides) do

@@ -1,26 +1,43 @@
 defmodule ExLokaliseTransfer do
   @moduledoc """
-  High-level entry points for ExLokaliseTransfer.
+  Public facade for Lokalise download/upload workflows.
 
-  Provides:
-    - `upload/1`   (upload local files to Lokalise)
-    - `download/1` (download files from Lokalise)
+  This module orchestrates config building, validation and delegates execution
+  to specific runners.
 
-  Both accept optional overrides via opts.
+  Flows:
+    - upload (async, per-file processes with summary)
+    - download_sync (blocking)
+    - download_async (remote async process with polling, then download)
+
+  Note:
+    `download/1` is an alias for `download_sync/1`.
   """
 
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Downloader
   alias ExLokaliseTransfer.Uploader
 
+  @type opts :: Keyword.t()
+
   @type download_result :: :ok | {:error, term()}
 
   @type upload_result ::
-          {:ok, ExLokaliseTransfer.Uploader.Async.summary()}
-          | {:error, ExLokaliseTransfer.Uploader.Async.summary()}
+          {:ok, Uploader.Async.summary()}
+          | {:error, Uploader.Async.summary()}
           | {:error, term()}
 
-  @spec upload(Keyword.t()) :: upload_result()
+  @doc """
+  Uploads local files to Lokalise.
+
+  Each file is uploaded as a separate async process.
+
+  Returns:
+    - `{:ok, summary}` when all files succeeded
+    - `{:error, summary}` when at least one file/process failed
+    - `{:error, reason}` if the flow failed before execution
+  """
+  @spec upload(opts()) :: upload_result()
   def upload(opts \\ []) do
     config = Config.build(opts, Uploader.Common.default_opts())
 
@@ -30,26 +47,36 @@ defmodule ExLokaliseTransfer do
   end
 
   @doc """
-  Runs the default download flow.
+  Runs sync download (default).
+
+  Equivalent to `download_sync/1`.
   """
-  @spec download(Keyword.t()) :: download_result()
   @spec download() :: download_result()
+  @spec download(opts()) :: download_result()
   def download(opts \\ []), do: download_sync(opts)
 
   @doc """
-  Runs the sync downloader.
+  Runs sync download.
+
+  Blocks until the archive is downloaded and extracted.
   """
-  @spec download_sync(Keyword.t()) :: download_result()
+  @spec download_sync(opts()) :: download_result()
   def download_sync(opts \\ []) do
     do_download(downloader_sync_module(), opts)
   end
 
-  @spec download_async(Keyword.t()) :: download_result()
+  @doc """
+  Runs async download.
+
+  Starts a remote Lokalise process, polls until completion,
+  then downloads and extracts the archive.
+  """
+  @spec download_async(opts()) :: download_result()
   def download_async(opts \\ []) do
     do_download(downloader_async_module(), opts)
   end
 
-  @spec do_download(module(), Keyword.t()) :: download_result()
+  @spec do_download(module(), opts()) :: download_result()
   defp do_download(mod, opts) do
     config =
       opts

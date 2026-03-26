@@ -66,9 +66,11 @@ defmodule ExLokaliseTransfer.Processes.Poller do
       {:pending, process} ->
         sleep_ms = backoff_module().backoff_ms(attempt_idx, opts)
 
+        status = process.status
+
         Logger.debug("polling queued process",
           process_id: process_id,
-          status: process.status,
+          status: status,
           attempt: attempt_idx,
           max_attempts: max_attempts,
           next_check_in_ms: sleep_ms

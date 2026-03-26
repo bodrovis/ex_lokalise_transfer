@@ -104,9 +104,11 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
   defp partition_many_results(results) do
     Enum.reduce(results, {%{}, []}, fn
       {process_id, {:pending, %QueuedProcess{} = process}}, {done_map, pending_ids} ->
+        status = process.status
+
         Logger.debug("queued process still pending",
           process_id: process_id,
-          status: process.status
+          status: status
         )
 
         {done_map, [process_id | pending_ids]}

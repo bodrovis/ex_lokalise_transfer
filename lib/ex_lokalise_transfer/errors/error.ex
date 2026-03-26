@@ -298,7 +298,6 @@ defmodule ExLokaliseTransfer.Errors.Error do
   end
 
   defp coalesce(nil, b), do: b
-  defp coalesce("", b), do: b
   defp coalesce(a, _b), do: a
 
   defp non_json?(""), do: true

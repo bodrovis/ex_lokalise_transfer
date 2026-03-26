@@ -93,14 +93,17 @@ defmodule ExLokaliseTransfer.Downloader.Async do
   end
 
   defp fetch_download_url(details) when is_map(details) do
-    cond do
-      is_binary(details[:download_url]) ->
-        normalize_url(details[:download_url])
+    atom_url = details[:download_url]
+    string_url = details["download_url"]
 
-      is_binary(details["download_url"]) ->
-        normalize_url(details["download_url"])
+    case {atom_url, string_url} do
+      {url, _} when is_binary(url) ->
+        normalize_url(url)
 
-      true ->
+      {_, url} when is_binary(url) ->
+        normalize_url(url)
+
+      _ ->
         :error
     end
   end

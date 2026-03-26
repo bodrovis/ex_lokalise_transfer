@@ -237,6 +237,21 @@ defmodule ExLokaliseTransfer.Processes.BatchPollerTest do
                {"p3", {:error, {:process_cancelled, p3}}}
              ]
     end
+
+    test "keeps unexpected process status as terminal error result" do
+      weird = queued_process("p1", "mystery_status")
+
+      expect(PollerMock, :check, 1, fn project_id, process_id ->
+        assert project_id == @project_id
+        assert process_id == "p1"
+
+        {:error, {:unexpected_process_status, "mystery_status", weird}}
+      end)
+
+      assert BatchPoller.wait_many(@project_id, ["p1"], @poll_opts) == [
+               {"p1", {:error, {:unexpected_process_status, "mystery_status", weird}}}
+             ]
+    end
   end
 
   defp expect_check_sequence(project_id, scripted_results) do

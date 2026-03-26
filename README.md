@@ -1,6 +1,6 @@
 # ExLokaliseTransfer
 
-`ExLokaliseTransfer` is a thin wrapper around Lokalise download and upload flows for Elixir projects.
+`ExLokaliseTransfer` is a wrapper around Lokalise API download and upload endpoints for Elixir projects.
 
 It provides:
 

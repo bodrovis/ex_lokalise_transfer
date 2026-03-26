@@ -333,6 +333,87 @@ defmodule ExLokaliseTransfer.Downloader.AsyncTest do
 
       refute File.exists?(zip_path)
     end
+
+    test "returns missing_download_url when map has non-binary download_url" do
+      zip_path = unique_tmp_zip_path()
+
+      TempMock
+      |> expect(:temp_zip_path, fn :async -> zip_path end)
+
+      RetryMock
+      |> expect(:run, fn fun, :lokalise, _ -> fun.() end)
+
+      LokaliseFilesMock
+      |> expect(:download_async, fn _, _ ->
+        {:ok, %{process_id: "proc-123"}}
+      end)
+
+      PollerMock
+      |> expect(:wait, fn _, _, _ ->
+        {:ok,
+         %{
+           process_id: "proc-123",
+           details: %{download_url: 123}
+         }}
+      end)
+
+      assert {:error, {:missing_download_url, "proc-123"}} =
+               Async.run(valid_config())
+    end
+
+    test "returns missing_download_url when details is invalid type" do
+      zip_path = unique_tmp_zip_path()
+
+      TempMock
+      |> expect(:temp_zip_path, fn :async -> zip_path end)
+
+      RetryMock
+      |> expect(:run, fn fun, :lokalise, _ -> fun.() end)
+
+      LokaliseFilesMock
+      |> expect(:download_async, fn _, _ ->
+        {:ok, %{process_id: "proc-123"}}
+      end)
+
+      PollerMock
+      |> expect(:wait, fn _, _, _ ->
+        {:ok,
+         %{
+           process_id: "proc-123",
+           details: :invalid
+         }}
+      end)
+
+      assert {:error, {:missing_download_url, "proc-123"}} =
+               Async.run(valid_config())
+    end
+
+    test "returns missing_download_url when keyword details contain non-binary download_url" do
+      zip_path = unique_tmp_zip_path()
+
+      TempMock
+      |> expect(:temp_zip_path, fn :async -> zip_path end)
+
+      RetryMock
+      |> expect(:run, fn fun, :lokalise, _ -> fun.() end)
+
+      LokaliseFilesMock
+      |> expect(:download_async, fn "project-123", _data ->
+        {:ok, %{process_id: "proc-123"}}
+      end)
+
+      PollerMock
+      |> expect(:wait, fn "project-123", "proc-123", _poll_opts ->
+        {:ok,
+         %{
+           process_id: "proc-123",
+           details: [download_url: 123]
+         }}
+      end)
+
+      assert {:error, {:missing_download_url, "proc-123"}} =
+               Async.run(valid_config())
+    end
   end
 
   defp valid_config do

@@ -162,6 +162,105 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.FetcherTest do
       assert File.read!(path) == "fresh"
       refute File.exists?(tmp_path)
     end
+
+    test "returns mkdir_failed when parent path cannot be created as directory" do
+      tmp_dir = unique_tmp_dir()
+      blocking_file = Path.join(tmp_dir, "not_a_dir")
+
+      File.write!(blocking_file, "boom")
+
+      path = Path.join([blocking_file, "bundle.zip"])
+
+      assert {:error, {:mkdir_failed, reason}} =
+               Fetcher.download_zip_stream(:test_finch, "https://example.com/bundle.zip", path)
+
+      assert is_atom(reason)
+
+      refute File.exists?(path)
+      refute File.exists?(path <> ".part")
+    end
+
+    test "returns tmp_cleanup_failed when stale temp path cannot be removed" do
+      tmp_dir = unique_tmp_dir()
+      path = Path.join(tmp_dir, "bundle.zip")
+      tmp_path = path <> ".part"
+
+      File.mkdir_p!(tmp_path)
+
+      assert {:error, {:tmp_cleanup_failed, reason}} =
+               Fetcher.download_zip_stream(:test_finch, "https://example.com/bundle.zip", path)
+
+      assert is_atom(reason)
+      assert File.dir?(tmp_path)
+      refute File.exists?(path)
+    end
+
+    test "cleans up temp file when rename to final path fails" do
+      tmp_dir = unique_tmp_dir()
+      path = Path.join(tmp_dir, "bundle.zip")
+
+      File.mkdir_p!(path)
+
+      HTTPStreamClientMock
+      |> expect(:stream, fn :test_finch, :get, "https://example.com/bundle.zip", acc, fun ->
+        acc =
+          acc
+          |> then(&fun.({:status, 200}, &1))
+          |> then(&fun.({:data, "zipdata"}, &1))
+          |> then(&fun.({:done}, &1))
+
+        {:ok, acc}
+      end)
+
+      assert {:error, {:rename_failed, reason}} =
+               Fetcher.download_zip_stream(:test_finch, "https://example.com/bundle.zip", path)
+
+      assert is_atom(reason)
+      refute File.exists?(path <> ".part")
+      assert File.dir?(path)
+    end
+
+    test "returns stream_failed with raw reason when stream client error is not a map with reason" do
+      tmp_dir = unique_tmp_dir()
+      path = Path.join(tmp_dir, "bundle.zip")
+
+      HTTPStreamClientMock
+      |> expect(:stream, fn :test_finch, :get, "https://example.com/fail.zip", _acc, _fun ->
+        {:error, :closed, []}
+      end)
+
+      assert {:error, {:stream_failed, :closed}} =
+               Fetcher.download_zip_stream(:test_finch, "https://example.com/fail.zip", path)
+
+      refute File.exists?(path)
+      refute File.exists?(path <> ".part")
+    end
+
+    test "does not append to error body when max size already reached" do
+      tmp_dir = unique_tmp_dir()
+      path = Path.join(tmp_dir, "bundle.zip")
+
+      full = String.duplicate("a", 8_192)
+      extra = "SHOULD_NOT_BE_INCLUDED"
+
+      HTTPStreamClientMock
+      |> expect(:stream, fn :test_finch, :get, "https://example.com/error.zip", acc, fun ->
+        acc =
+          acc
+          |> then(&fun.({:status, 500}, &1))
+          |> then(&fun.({:data, full}, &1))
+          |> then(&fun.({:data, extra}, &1))
+          |> then(&fun.({:done}, &1))
+
+        {:ok, acc}
+      end)
+
+      assert {:error, {:http_error, 500, body}} =
+               Fetcher.download_zip_stream(:test_finch, "https://example.com/error.zip", path)
+
+      assert byte_size(body) == 8_192
+      refute String.contains?(body, "SHOULD_NOT_BE_INCLUDED")
+    end
   end
 
   defp unique_tmp_dir do

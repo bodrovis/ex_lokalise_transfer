@@ -3,6 +3,7 @@ defmodule ExLokaliseTransfer.MixProject do
 
   @version "0.1.0"
   @source_url "https://github.com/bodrovis/ex_lokalise_transfer"
+  @description "Wrapper around Lokalise API download and upload endpoints for Elixir projects."
 
   def project do
     [
@@ -11,7 +12,7 @@ defmodule ExLokaliseTransfer.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: "Lokalise upload/download tool for Elixir",
+      description: @description,
       package: package(),
       docs: docs(),
       test_coverage: [tool: ExCoveralls],
@@ -40,7 +41,7 @@ defmodule ExLokaliseTransfer.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18.1", only: :test},
-      {:ex_doc, "~> 0.37", only: [:dev, :test]},
+      {:ex_doc, "~> 0.37", only: :dev},
       {:mox, "~> 1.2", only: :test}
     ]
   end
@@ -73,8 +74,7 @@ defmodule ExLokaliseTransfer.MixProject do
 
   defp package do
     [
-      description:
-        "Simple and production-ready sync layer for Lokalise (upload/download) on top of elixir_lokalise_api.",
+      description: @description,
       maintainers: ["Elijah S. Krukowski"],
       licenses: ["BSD-3-Clause"],
       links: %{

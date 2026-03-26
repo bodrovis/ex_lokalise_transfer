@@ -153,6 +153,80 @@ defmodule ExLokaliseTransfer.Errors.ErrorTest do
       assert err.raw == "{"
       assert is_binary(err.details["unmarshal_error"])
     end
+
+    test "lokalise empty body is treated as non-json" do
+      {:error, err} = Error.normalize({:error, {"", 500}}, :lokalise)
+
+      assert err.message == "Internal Server Error"
+      assert err.reason == "non-json error body"
+      assert err.raw == ""
+    end
+
+    test "lokalise fallback is used when message exists but code fields are invalid" do
+      body = ~s({"message":"msg","code":"abc","foo":"bar"})
+
+      {:error, err} = Error.normalize({:error, {body, 400}}, :lokalise)
+
+      assert err.kind == :http
+      assert err.source == :lokalise
+      assert err.status == 400
+      assert err.message == "msg"
+      assert err.reason == "unhandled error format"
+      assert err.code == nil
+      assert err.raw == body
+      assert err.details["message"] == "msg"
+      assert err.details["code"] == "abc"
+      assert err.details["foo"] == "bar"
+    end
+
+    test "lokalise fallback uses http status text when message is missing" do
+      body = ~s({"foo":"bar"})
+
+      {:error, err} = Error.normalize({:error, {body, 400}}, :lokalise)
+
+      assert err.message == "Bad Request"
+      assert err.reason == "unhandled error format"
+      assert err.code == nil
+      assert err.details["foo"] == "bar"
+    end
+
+    test "lokalise json non-object -> unhandled error format" do
+      body = ~s(["oops"])
+
+      {:error, err} = Error.normalize({:error, {body, 500}}, :lokalise)
+
+      assert err.kind == :http
+      assert err.source == :lokalise
+      assert err.status == 500
+      assert err.message == "Internal Server Error"
+      assert err.reason == "unhandled error format"
+      assert err.code == nil
+      assert err.raw == body
+      assert err.details == %{"error_value" => ["oops"]}
+    end
+
+    test "lokalise fallback uses default reason when error field is missing" do
+      body = ~s({"message":"msg","foo":"bar"})
+
+      {:error, err} = Error.normalize({:error, {body, 400}}, :lokalise)
+
+      assert err.status == 400
+      assert err.message == "msg"
+      assert err.reason == "unhandled error format"
+      assert err.code == nil
+      assert err.details["foo"] == "bar"
+    end
+
+    test "lokalise nested error without details uses default details map" do
+      body = ~s({"error":{"message":"msg","code":429}})
+
+      {:error, err} = Error.normalize({:error, {body, 429}}, :lokalise)
+
+      assert err.code == 429
+      assert err.message == "msg"
+      assert err.reason == nil
+      assert err.details == %{"reason" => "server error without details"}
+    end
   end
 
   describe "normalize/2 - http errors (generic / s3-ish)" do
@@ -231,6 +305,155 @@ defmodule ExLokaliseTransfer.Errors.ErrorTest do
       assert err.reason == "invalid json in error body"
       assert err.raw == "{"
       assert is_binary(err.details["unmarshal_error"])
+    end
+
+    test "generic json non-object -> unhandled error format" do
+      body = ~s([1,2,3])
+
+      {:error, err} = Error.normalize({:error, {body, 418}}, :s3)
+
+      assert err.kind == :http
+      assert err.source == :s3
+      assert err.status == 418
+      assert err.message == "HTTP 418"
+      assert err.reason == "unhandled error format"
+      assert err.code == nil
+      assert err.raw == body
+      assert err.details == %{"error_value" => [1, 2, 3]}
+    end
+
+    test "http error with nil body -> empty error body" do
+      {:error, err} = Error.normalize({:error, {nil, 404}}, :s3)
+
+      assert err.kind == :http
+      assert err.status == 404
+      assert err.message == "Not Found"
+      assert err.reason == "empty error body"
+      assert err.raw == ""
+      assert err.details == %{}
+    end
+
+    test "http error with iodata body converts to string" do
+      {:error, err} = Error.normalize({:error, {[~c"n", ~c"o", ~c"p", ~c"e"], 500}}, :s3)
+
+      assert err.kind == :http
+      assert err.status == 500
+      assert err.message == "Internal Server Error"
+      assert err.reason == "non-json error body"
+      assert err.raw == "nope"
+    end
+
+    test "http error with map body is json-encoded before parsing" do
+      {:error, err} =
+        Error.normalize(
+          {:error, {%{"message" => "denied", "error" => "bad", "code" => 403}, 403}},
+          :s3
+        )
+
+      assert err.kind == :http
+      assert err.status == 403
+      assert err.message == "denied"
+      assert err.reason == "bad"
+      assert err.code == 403
+    end
+
+    test "http error with non-string body falls back to inspect" do
+      {:error, err} = Error.normalize({:error, {12345, 500}}, :s3)
+
+      assert err.kind == :http
+      assert err.status == 500
+      assert err.message == "Internal Server Error"
+      assert err.reason == "non-json error body"
+      assert err.raw == "12345"
+    end
+
+    test "generic json parses float code via truncation" do
+      body = ~s({"message":"nope","code":429.9})
+
+      {:error, err} = Error.normalize({:error, {body, 403}}, :s3)
+
+      assert err.message == "nope"
+      assert err.code == 429
+    end
+
+    test "generic json parses integer code from binary string" do
+      body = ~s({"message":"nope","code":"403"})
+
+      {:error, err} = Error.normalize({:error, {body, 403}}, :s3)
+
+      assert err.message == "nope"
+      assert err.code == 403
+    end
+
+    test "generic non-json xml falls back when closing Code tag is missing" do
+      body = "<Error><Code>AccessDenied</Error>"
+
+      {:error, err} = Error.normalize({:error, {body, 403}}, :s3)
+
+      assert err.kind == :http
+      assert err.source == :s3
+      assert err.status == 403
+      assert err.reason == "non-json error body"
+      assert err.message == "Forbidden"
+      assert err.code == nil
+      assert err.raw == body
+    end
+
+    test "generic json falls back to http status text when message is missing" do
+      body = ~s({"error":"something bad"})
+
+      {:error, err} = Error.normalize({:error, {body, 418}}, :s3)
+
+      assert err.kind == :http
+      assert err.source == :s3
+      assert err.status == 418
+      assert err.message == "HTTP 418"
+      assert err.reason == "something bad"
+    end
+
+    test "generic json ignores invalid non-numeric code" do
+      body = ~s({"message":"nope","code":"abc"})
+
+      {:error, err} = Error.normalize({:error, {body, 403}}, :s3)
+
+      assert err.message == "nope"
+      assert err.code == nil
+    end
+
+    test "generic json ignores invalid code type" do
+      body = ~s({"message":"nope","code":{"x":1}})
+
+      {:error, err} = Error.normalize({:error, {body, 403}}, :s3)
+
+      assert err.message == "nope"
+      assert err.code == nil
+    end
+
+    test "generic empty body is treated as non-json" do
+      {:error, err} = Error.normalize({:error, {"", 404}}, :s3)
+
+      assert err.message == "Not Found"
+      assert err.reason == "empty error body"
+      assert err.raw == ""
+    end
+
+    test "http status text mapping is reflected in normalized message" do
+      cases = [
+        {401, "Unauthorized"},
+        {403, "Forbidden"},
+        {408, "Request Timeout"},
+        {409, "Conflict"},
+        {422, "Unprocessable Entity"},
+        {503, "Service Unavailable"},
+        {504, "Gateway Timeout"},
+        {418, "HTTP 418"}
+      ]
+
+      Enum.each(cases, fn {status, expected_message} ->
+        {:error, err} = Error.normalize({:error, {"", status}}, :s3)
+        assert err.message == expected_message
+        assert err.reason == "empty error body"
+      end)
     end
   end
 end

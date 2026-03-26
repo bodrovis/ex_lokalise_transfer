@@ -71,11 +71,16 @@ defmodule ExLokaliseTransfer.Retry do
   end
 
   defp log_retry(%Error{} = e, attempt_idx, max_attempts, sleep_ms) do
+    source = e.source
+    kind = e.kind
+    status = e.status
+    code = e.code
+
     Logger.debug("retrying after error",
-      source: e.source,
-      kind: e.kind,
-      status: e.status,
-      code: e.code,
+      source: source,
+      kind: kind,
+      status: status,
+      code: code,
       classification: Retryable.classify(e),
       attempt: attempt_idx,
       max_attempts: max_attempts,
@@ -84,10 +89,14 @@ defmodule ExLokaliseTransfer.Retry do
   end
 
   defp log_give_up(%Error{} = e, attempt_idx, max_attempts) do
+    source = e.source
+    kind = e.kind
+    status = e.status
+
     Logger.warning("giving up after error",
-      source: e.source,
-      kind: e.kind,
-      status: e.status,
+      source: source,
+      kind: kind,
+      status: status,
       attempt: attempt_idx,
       max_attempts: max_attempts,
       retryable: Retryable.retryable?(e)

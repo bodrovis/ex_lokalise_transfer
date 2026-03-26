@@ -3,10 +3,16 @@ defmodule ExLokaliseTransfer.Processes.QueuedProcessesClientImpl do
 
   @behaviour ExLokaliseTransfer.Processes.QueuedProcessesClient
 
-  alias ElixirLokaliseApi.QueuedProcesses
-
   @impl true
   def find(project_id, process_id) do
-    QueuedProcesses.find(project_id, process_id)
+    queued_processes_module().find(project_id, process_id)
+  end
+
+  defp queued_processes_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :queued_processes_sdk_module,
+      ElixirLokaliseApi.QueuedProcesses
+    )
   end
 end

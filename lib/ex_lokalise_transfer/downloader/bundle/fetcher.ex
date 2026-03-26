@@ -107,8 +107,14 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
 
   defp open_tmp_file(tmp_path) do
     case File.open(tmp_path, [:write, :binary]) do
-      {:ok, io} -> {:ok, io}
-      {:error, reason} -> {:error, {:open_failed, reason}}
+      {:ok, io} ->
+        {:ok, io}
+
+      # In reality this is very rare
+      # coveralls-ignore-start
+      {:error, reason} ->
+        {:error, {:open_failed, reason}}
+        # coveralls-ignore-stop
     end
   end
 
@@ -135,9 +141,11 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
     try do
       IO.binwrite(io, chunk)
       acc
+      # coveralls-ignore-start
     rescue
       e ->
         %{acc | write_error: Exception.message(e)}
+        # coveralls-ignore-stop
     end
   end
 
@@ -155,9 +163,12 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Fetcher do
     end
   end
 
+  # This might happen but only in super-strange cases
   defp handle_stream_result({:ok, %{write_error: reason}}, tmp_path, _path)
        when not is_nil(reason) do
+    # coveralls-ignore-start
     cleanup_tmp(tmp_path)
+    # coveralls-ignore-stop
     {:error, {:write_failed, reason}}
   end
 

@@ -91,6 +91,23 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.ExtractorTest do
       assert {:error, {:mkdir_failed, _reason}} =
                Extractor.extract_zip(zip_path, extract_to)
     end
+
+    test "returns zip_extract_failed when extraction conflicts with existing file" do
+      tmp_dir = unique_tmp_dir()
+      zip_path = Path.join(tmp_dir, "bundle.zip")
+      extract_to = Path.join(tmp_dir, "out")
+
+      create_zip!(zip_path, [
+        {"translations/en.json", ~s({"hello":"world"})}
+      ])
+
+      File.mkdir_p!(extract_to)
+
+      File.write!(Path.join(extract_to, "translations"), "i block directory creation")
+
+      assert {:error, {:zip_extract_failed, _reason}} =
+               Extractor.extract_zip(zip_path, extract_to)
+    end
   end
 
   defp create_zip!(zip_path, files) do
