@@ -358,7 +358,7 @@ defmodule ExLokaliseTransfer.Errors.ErrorTest do
     end
 
     test "http error with non-string body falls back to inspect" do
-      {:error, err} = Error.normalize({:error, {12345, 500}}, :s3)
+      {:error, err} = Error.normalize({:error, {12_345, 500}}, :s3)
 
       assert err.kind == :http
       assert err.status == 500
