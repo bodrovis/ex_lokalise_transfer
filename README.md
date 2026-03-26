@@ -1,13 +1,22 @@
 # ExLokaliseTransfer
 
-`ExLokaliseTransfer` provides a wrapper around Lokalise download and upload flows for Elixir projects.
+`ExLokaliseTransfer` is a thin wrapper around Lokalise download and upload flows for Elixir projects.
+
+It provides:
+
+- sync and async download of translation bundles
+- async upload of locale files
+- retry/backoff handling
+- polling for async processes
+- local extraction utilities
 
 ## Getting started
 
 ### Requirements
 
 - Lokalise project
-- Lokalise API token with read/write access (read-only tokens would work only for downloads)
+- Lokalise API token with read/write access  
+  (read-only tokens work for downloads only)
 
 ### Installation
 
@@ -21,7 +30,7 @@ end
 
 ## Required application config
 
-The following config is required globally and is used by both download and upload flows.
+The following config is required globally.
 
 Configure the Lokalise API token:
 
@@ -39,79 +48,131 @@ config :ex_lokalise_transfer,
 
 ## Downloading translation files
 
-### Download options
+### Sync download
 
-You can configure the following options in the form of keyword lists. Most have sensible defaults:
-
-* `body` — options sent to the Lokalise bundle download request. At the very least, `body` must contain the `format` param.
-* `extra` — local extraction options
-* `retry` — retry/backoff settings
-
-Example:
+Downloads a bundle directly and extracts it locally.
 
 ```elixir
-# These are used as defaults:
-
-[
+# You can also use ExLokaliseTransfer.download_sync()
+ExLokaliseTransfer.download(
   body: [
     format: "json",
-    original_filenames: true,
-    directory_prefix: "",
-    indentation: "2sp"
-    # provide any other params supported by Lokalise API
+    original_filenames: false
   ],
-  retry: [
-    max_attempts: 3,
-    min_sleep_ms: 1_000,
+  extra: [
+    extract_to: "./priv/locales"
+  ]
+)
+```
+
+Returns: `:ok | {:error, reason}`.
+
+### Async download
+
+Enqueues a bundle build in Lokalise, waits for completion, then downloads and extracts it.
+
+```elixir
+ExLokaliseTransfer.download_async(
+  body: [
+    format: "json"
+  ],
+  poll: [
+    max_attempts: 15,
+    min_sleep_ms: 3_000,
     max_sleep_ms: 60_000,
     jitter: :centered
   ],
   extra: [
-    # If the path is relative, it is expanded relative
-    # to the current working directory
-    locales_path: "./locales"
+    extract_to: "./priv/locales"
   ]
-]
+)
 ```
 
-### Sync download
+## Uploading translations
 
-To run the sync download flow:
+### Async upload
+
+Uploads multiple locale files and processes them asynchronously.
 
 ```elixir
-opts = [
-  body: [
-    format: "json",
-    original_filenames: false,
-    directory_prefix: "translations/",
-    indentation: "4sp"
+{:ok, summary} =
+  ExLokaliseTransfer.upload(
+    body: [
+      format: "json"
+    ],
+    extra: [
+      locales_path: "./priv/locales",
+      include_patterns: ["*.json"],
+      exclude_patterns: [],
+      lang_resolver: :basename
+    ],
+    poll: [
+      max_attempts: 10,
+      min_sleep_ms: 3_000,
+      max_sleep_ms: 60_000,
+      jitter: :centered
+    ]
+  )
+```
+
+Returns: `{:ok, summary} | {:error, summary}`
+
+#### Summary structure
+
+```elixir
+%{
+  discovered_entries: [Entry.t()],
+  enqueue_successes: [
+    %{entry: Entry.t(), process_id: String.t()}
   ],
-  extra: [
-    locales_path: "./priv/locales"
-  ]
-]
-
-# Returns :ok or {:error, reason}:
-ExLokaliseTransfer.download_sync(opts)
+  enqueue_errors: [
+    %{entry: Entry.t(), error: term()}
+  ],
+  process_results: [
+    %{
+      entry: Entry.t(),
+      process_id: String.t(),
+      result: {:ok, map()} | {:error, term()}
+    }
+  ],
+  errors: [term()]
+}
 ```
 
-The default `download/0` entrypoint curntly uses the same sync download flow:
+## Options
+
+All flows share a common structure of options:
 
 ```elixir
-case ExLokaliseTransfer.download() do
-  :ok ->
-    IO.puts("Download completed")
-
-  {:error, reason} ->
-    IO.inspect(reason, label: "Download failed")
-end
+[
+  body: [...],
+  retry: [...],
+  poll: [...],
+  extra: [...]
+]
 ```
 
-## Retry options
+### body — Lokalise API options
 
-Retry settings are optional and are similar across download and upload flows.
+Passed directly to Lokalise bundle/upload requests.
 
-Default retry config:
+Example:
+
+```elixir
+body: [
+  format: "json",
+  original_filenames: true,
+  directory_prefix: "",
+  indentation: "2sp"
+]
+```
+
+- `format` (required for download)
+- any other fields supported by Lokalise API
+
+### retry — retry/backoff configuration
+
+Used for API calls and downloads.
 
 ```elixir
 retry: [
@@ -122,7 +183,62 @@ retry: [
 ]
 ```
 
-- `max_attempts` — total number of attempts, including the first one
-- `min_sleep_ms` — minimum backoff delay in milliseconds
-- `max_sleep_ms` — maximum backoff delay in milliseconds
-- `jitter` — backoff jitter mode (`:centered` or `:full`)
+- `max_attempts` — total attempts (including first)
+- `min_sleep_ms` — minimum delay
+- `max_sleep_ms` — maximum delay
+- `jitter` — `:centered` or `:full`
+
+### poll — async polling configuration
+
+Used only in async flows.
+
+```elixir
+poll: [
+  max_attempts: 10,
+  min_sleep_ms: 3_000,
+  max_sleep_ms: 60_000,
+  jitter: :centered
+]
+```
+
+Controls how long the system waits for Lokalise async processes.
+
+### extra — local behaviour options
+
+#### Download
+
+```elixir
+extra: [
+  extract_to: "./priv/locales"
+]
+```
+
+- `extract_to` — target directory for extracted files (automatically expanded to absolute path)
+
+## Testing
+
+Run:
+
+```
+mix test
+```
+
+To see coverage:
+
+```
+mix coveralls.html
+```
+
+### Integration testing
+
+To run integration tests:
+
+```
+mix test --include integration
+```
+
+Note that in this case you'll need to set `LOKALISE_API_TOKEN` and `LOKALISE_PROJECT_ID` environment variables.
+
+## License
+
+MIT (c) [Elijah S. Krukowski](https://bodrovis.tech)

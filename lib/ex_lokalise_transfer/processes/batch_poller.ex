@@ -4,10 +4,11 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
   a terminal status.
   """
 
+  @behaviour ExLokaliseTransfer.Processes.BatchPollerBehaviour
+
   require Logger
 
   alias ElixirLokaliseApi.Model.QueuedProcess
-  alias ExLokaliseTransfer.Helpers.Backoff
   alias ExLokaliseTransfer.Processes.Classifier
   alias ExLokaliseTransfer.Processes.Poller
 
@@ -78,7 +79,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
     if pending_ids == [] do
       acc
     else
-      sleep_ms = Backoff.backoff_ms(attempt_idx, opts)
+      sleep_ms = backoff_module().backoff_ms(attempt_idx, opts)
 
       Logger.debug("polling queued processes batch",
         pending_count: length(pending_ids),
@@ -87,7 +88,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
         next_check_in_ms: sleep_ms
       )
 
-      Process.sleep(sleep_ms)
+      sleep_module().sleep(sleep_ms)
 
       do_wait_many(
         pending_ids,
@@ -133,7 +134,7 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
 
   defp safe_check(project_id, process_id) do
     try do
-      Poller.check(project_id, process_id)
+      poller_module().check(project_id, process_id)
     rescue
       e ->
         {:error, {:exception, Exception.message(e)}}
@@ -141,5 +142,29 @@ defmodule ExLokaliseTransfer.Processes.BatchPoller do
       kind, reason ->
         {:error, {kind, reason}}
     end
+  end
+
+  defp poller_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :poller_module,
+      ExLokaliseTransfer.Processes.Poller
+    )
+  end
+
+  defp backoff_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :backoff_module,
+      ExLokaliseTransfer.Helpers.Backoff
+    )
+  end
+
+  defp sleep_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :sleep_module,
+      ExLokaliseTransfer.Processes.SleepImpl
+    )
   end
 end

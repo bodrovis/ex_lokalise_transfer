@@ -7,9 +7,6 @@ defmodule ExLokaliseTransfer.Downloader.Common do
   """
 
   alias ExLokaliseTransfer.Config
-  alias ExLokaliseTransfer.Retry
-  alias ExLokaliseTransfer.Downloader.Bundle.Fetcher
-  alias ExLokaliseTransfer.Downloader.Bundle.Extractor
 
   @doc """
   Returns the default downloader options.
@@ -46,8 +43,6 @@ defmodule ExLokaliseTransfer.Downloader.Common do
     ]
   end
 
-  @finch ElixirLokaliseApi.Finch
-
   @doc """
   Validates downloader configuration.
 
@@ -61,12 +56,6 @@ defmodule ExLokaliseTransfer.Downloader.Common do
          :ok <- validate_extra(config.extra) do
       :ok
     end
-  end
-
-  def download_and_extract(url, zip_path, target_dir, retry) do
-    with {:ok, :downloaded} <-
-           Retry.run(fn -> Fetcher.download_zip_stream(@finch, url, zip_path) end, :s3, retry),
-         do: Extractor.extract_zip(zip_path, target_dir)
   end
 
   def resolve_extract_to(extra) do

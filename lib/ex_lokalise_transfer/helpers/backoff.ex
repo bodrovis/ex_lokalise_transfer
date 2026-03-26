@@ -1,4 +1,6 @@
 defmodule ExLokaliseTransfer.Helpers.Backoff do
+  @behaviour ExLokaliseTransfer.Helpers.BackoffBehaviour
+
   # failed_attempt_n: 1,2,3... (not attempt_idx)
   def backoff_ms(failed_attempt_n, opts)
       when is_integer(failed_attempt_n) and failed_attempt_n >= 1 do

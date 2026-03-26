@@ -14,15 +14,14 @@ defmodule ExLokaliseTransfer.Uploader.Async do
     - `{:error, summary}` when at least one enqueue or process failed
   """
 
+  @behaviour ExLokaliseTransfer.RunnerBehaviour
+
   require Logger
 
-  alias ExLokaliseTransfer.Helpers.Normalization
-  alias ElixirLokaliseApi.Files
   alias ExLokaliseTransfer.Config
   alias ExLokaliseTransfer.Errors.Error
+  alias ExLokaliseTransfer.Helpers.Normalization
   alias ExLokaliseTransfer.Processes.BatchPoller
-  alias ExLokaliseTransfer.Retry
-  alias ExLokaliseTransfer.Uploader.Files, as: UploadFiles
   alias ExLokaliseTransfer.Uploader.Files.Entry
 
   @max_concurrency 6
@@ -56,7 +55,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
   @doc """
   Runs the async uploader.
   """
-  @spec run(Config.t()) :: result()
+  @spec run(Config.t()) :: result() | {:error, term()}
   def run(%Config{
         project_id: project_id,
         body: body,
@@ -69,7 +68,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
       operation: :upload_async
     )
 
-    with {:ok, entries} <- UploadFiles.discover(extra) do
+    with {:ok, entries} <- upload_files_module().discover(extra) do
       body_map = Normalization.normalize_body(body)
 
       {enqueue_successes, enqueue_errors} =
@@ -146,7 +145,11 @@ defmodule ExLokaliseTransfer.Uploader.Async do
   end
 
   defp request_upload(project_id, payload, retry) do
-    case Retry.run(fn -> Files.upload(project_id, payload) end, :lokalise, retry) do
+    case retry_module().run(
+           fn -> lokalise_files_module().upload(project_id, payload) end,
+           :lokalise,
+           retry
+         ) do
       {:ok, %{process_id: process_id}} when is_binary(process_id) and process_id != "" ->
         {:ok, process_id}
 
@@ -168,8 +171,7 @@ defmodule ExLokaliseTransfer.Uploader.Async do
         {process_id, entry}
       end)
 
-    project_id
-    |> BatchPoller.wait_many(process_ids, poll_opts)
+    batch_poller_module().wait_many(project_id, process_ids, poll_opts)
     |> Enum.map(fn {process_id, result} ->
       %{
         entry: Map.fetch!(entry_by_process_id, process_id),
@@ -197,5 +199,37 @@ defmodule ExLokaliseTransfer.Uploader.Async do
       end)
 
     enqueue_reasons ++ process_reasons
+  end
+
+  defp upload_files_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :upload_files_module,
+      ExLokaliseTransfer.Uploader.Files
+    )
+  end
+
+  defp batch_poller_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :batch_poller_module,
+      ExLokaliseTransfer.Processes.BatchPoller
+    )
+  end
+
+  defp retry_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :retry_module,
+      ExLokaliseTransfer.Retry
+    )
+  end
+
+  defp lokalise_files_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :lokalise_files_module,
+      ExLokaliseTransfer.LokaliseFilesImpl
+    )
   end
 end

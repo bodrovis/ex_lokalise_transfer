@@ -6,6 +6,8 @@ defmodule ExLokaliseTransfer.Retry do
   with exponential backoff and jitter up to the configured attempt limit.
   """
 
+  @behaviour ExLokaliseTransfer.RetryBehaviour
+
   require Logger
 
   alias ExLokaliseTransfer.Errors.Error

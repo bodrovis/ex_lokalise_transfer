@@ -7,6 +7,8 @@ defmodule ExLokaliseTransfer.Uploader.Files do
   resolved `lang_iso` for each file.
   """
 
+  @behaviour ExLokaliseTransfer.Uploader.Files.FilesBehaviour
+
   alias ExLokaliseTransfer.Uploader.Files.Entry
 
   @type lang_resolver ::

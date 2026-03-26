@@ -3,11 +3,11 @@ defmodule ExLokaliseTransfer.Processes.Poller do
   Polls a single Lokalise queued process until it reaches a terminal status.
   """
 
+  @behaviour ExLokaliseTransfer.Processes.PollerBehaviour
+
   require Logger
 
   alias ElixirLokaliseApi.Model.QueuedProcess
-  alias ElixirLokaliseApi.QueuedProcesses
-  alias ExLokaliseTransfer.Helpers.Backoff
   alias ExLokaliseTransfer.Processes.Classifier
 
   @type queued_process :: Classifier.queued_process()
@@ -33,7 +33,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
   @spec find(String.t(), String.t()) :: {:ok, queued_process()} | {:error, term()}
   def find(project_id, process_id)
       when is_binary(project_id) and is_binary(process_id) do
-    QueuedProcesses.find(project_id, process_id)
+    queued_processes_client().find(project_id, process_id)
   end
 
   @spec check(String.t(), String.t()) :: check_result()
@@ -64,7 +64,7 @@ defmodule ExLokaliseTransfer.Processes.Poller do
         {:error, {:process_wait_timeout, process_id}}
 
       {:pending, process} ->
-        sleep_ms = Backoff.backoff_ms(attempt_idx, opts)
+        sleep_ms = backoff_module().backoff_ms(attempt_idx, opts)
 
         Logger.debug("polling queued process",
           process_id: process_id,
@@ -74,12 +74,36 @@ defmodule ExLokaliseTransfer.Processes.Poller do
           next_check_in_ms: sleep_ms
         )
 
-        Process.sleep(sleep_ms)
+        sleep_module().sleep(sleep_ms)
 
         do_wait(project_id, process_id, opts, attempt_idx + 1, max_attempts)
 
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp queued_processes_client do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :queued_processes_client,
+      ExLokaliseTransfer.Processes.QueuedProcessesClientImpl
+    )
+  end
+
+  defp backoff_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :backoff_module,
+      ExLokaliseTransfer.Helpers.Backoff
+    )
+  end
+
+  defp sleep_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :sleep_module,
+      ExLokaliseTransfer.Processes.SleepImpl
+    )
   end
 end

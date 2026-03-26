@@ -20,7 +20,7 @@ defmodule ExLokaliseTransfer do
     config = Config.build(opts, Uploader.Common.default_opts())
 
     with :ok <- Uploader.Common.validate(config) do
-      Uploader.Async.run(config)
+      uploader_async_module().run(config)
     end
   end
 
@@ -36,12 +36,12 @@ defmodule ExLokaliseTransfer do
   """
   @spec download_sync(Keyword.t()) :: result()
   def download_sync(opts \\ []) do
-    do_download(Downloader.Sync, opts)
+    do_download(downloader_sync_module(), opts)
   end
 
   @spec download_async(Keyword.t()) :: result()
   def download_async(opts \\ []) do
-    do_download(Downloader.Async, opts)
+    do_download(downloader_async_module(), opts)
   end
 
   @spec do_download(module(), Keyword.t()) :: result()
@@ -54,5 +54,29 @@ defmodule ExLokaliseTransfer do
          :ok <- Downloader.Common.validate(config) do
       mod.run(config)
     end
+  end
+
+  defp uploader_async_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :uploader_async_module,
+      ExLokaliseTransfer.Uploader.Async
+    )
+  end
+
+  defp downloader_sync_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :downloader_sync_module,
+      ExLokaliseTransfer.Downloader.Sync
+    )
+  end
+
+  defp downloader_async_module do
+    Application.get_env(
+      :ex_lokalise_transfer,
+      :downloader_async_module,
+      ExLokaliseTransfer.Downloader.Async
+    )
   end
 end

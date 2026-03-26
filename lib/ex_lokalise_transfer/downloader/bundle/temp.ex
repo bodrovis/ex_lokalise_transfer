@@ -7,7 +7,10 @@ defmodule ExLokaliseTransfer.Downloader.Bundle.Temp do
     - a UTC timestamp
     - a unique integer suffix
   """
-  @spec temp_zip_path(atom() | binary()) :: binary()
+
+  @behaviour ExLokaliseTransfer.Downloader.Bundle.TempBehaviour
+
+  @spec temp_zip_path(atom() | String.t()) :: String.t()
   def temp_zip_path(kind) do
     ts =
       DateTime.utc_now()
