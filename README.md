@@ -3,7 +3,7 @@
 ![CI](https://github.com/bodrovis/ex_lokalise_transfer/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/bodrovis/ex_lokalise_transfer/badge.svg?branch=master)](https://coveralls.io/github/lokalise/ex_lokalise_transfer?branch=master)
 [![Module Version](https://img.shields.io/hexpm/v/ex_lokalise_transfer.svg)](https://hex.pm/packages/ex_lokalise_transfer)
-[![Total Download](https://img.shields.io/hexpm/dt/elixir_lokalise_api.svg)](https://hex.pm/packages/ex_lokalise_transfer)
+[![Total Download](https://img.shields.io/hexpm/dt/ex_lokalise_transfer.svg)](https://hex.pm/packages/ex_lokalise_transfer)
 
 `ExLokaliseTransfer` is a wrapper around Lokalise API download and upload endpoints for Elixir projects.
 
