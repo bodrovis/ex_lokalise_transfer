@@ -15,6 +15,8 @@ It provides:
 - polling for async processes
 - local extraction utilities
 
+> Sample app can be found in the [bodrovis/ex_lokalise_transfer_demo](https://github.com/bodrovis/ex_lokalise_transfer_demo) repo.
+
 ## Getting started
 
 ### Requirements
